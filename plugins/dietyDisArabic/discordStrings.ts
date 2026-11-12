@@ -961,7 +961,27 @@ export const discordStrings: Record<string, string> = {
     "unread, {channelName} (group message)": "غير مقروءة، {channelName} (رسالة جماعية)",
     "{brand} ending in **{last_4}**": "{brand} المنتهية بـ **{last_4}**",
     "Give feedback": "شاركنا رأيك",
-    "How is blocking users on Discord working for you?": "ما رأيك في طريقة حظر المستخدمين في Discord؟"
+    "How is blocking users on Discord working for you?": "ما رأيك في طريقة حظر المستخدمين في Discord؟",
+
+    // ---- Privacy and data ----
+    "Allow Discord to use and process my information to understand and improve Discord’s services. [Learn more]({helpdeskArticle})": "السماح لـ Discord باستخدام معلوماتي ومعالجتها لفهم خدماته وتحسينها. [اعرف المزيد]({helpdeskArticle})",
+    "Allow friends to receive a push notification when you update your profile.": "السماح لأصدقائك بتلقي إشعار عندما تحدّث ملفك الشخصي.",
+    "Allow message content that you send in Discoverable channels to appear on web pages. Admins of Discoverable servers control which channels are Discoverable. These messages will appear as you wrote them, but won’t show your username. [Learn more]({learnMoreURL})": "السماح بظهور محتوى رسائلك في القنوات القابلة للاكتشاف على صفحات الويب. مشرفو السيرفرات القابلة للاكتشاف يحددون أي القنوات قابلة للاكتشاف. تظهر الرسائل كما كتبتها، لكن دون اسم المستخدم. [اعرف المزيد]({learnMoreURL})",
+    "Allows Discord to personalize Sponsored Content, like Quests, using data Discord receives from advertisers and third-party data providers. If you opt out, you may still see Quests, but they won’t be personalized using data from third parties. [Learn more]({helpdeskArticle})": "يسمح لـ Discord بتخصيص المحتوى المموّل، مثل المهام، باستخدام بيانات يتلقاها من المعلنين ومزودي البيانات الخارجيين. إذا رفضت فقد تظل ترى المهام، لكنها لن تُخصَّص ببيانات من جهات خارجية. [اعرف المزيد]({helpdeskArticle})",
+    "Allows Discord to personalize Sponsored Content, like Quests, using your Discord activity, such as the games you play. If you opt out you may still see Quests, but they won’t be personalized.": "يسمح لـ Discord بتخصيص المحتوى المموّل، مثل المهام، باستخدام نشاطك في Discord كالألعاب التي تلعبها. إذا رفضت فقد تظل ترى المهام، لكنها لن تكون مخصصة لك.",
+    "Allows Discord to use information, such as who you talk to and what games you play, to personalize Discord for you. [Learn more]({helpdeskArticle})": "يسمح لـ Discord باستخدام معلومات، مثل من تتحدث معهم وما الألعاب التي تلعبها، لتخصيص Discord لك. [اعرف المزيد]({helpdeskArticle})",
+    "Allows your voice to be included when someone in the same voice channel uses Clips.": "يسمح بتضمين صوتك عندما يسجّل أحد في نفس القناة الصوتية مقطعاً.",
+    "Control who can see your profile info — like your bio and connected accounts. [Learn more]({learnMoreUrl})": "تحكم في من يرى معلومات ملفك الشخصي، مثل النبذة والحسابات المرتبطة. [اعرف المزيد]({learnMoreUrl})",
+    "Discord needs to store and process some data in order to provide you the basic Discord service, such as your messages, what servers you’re in and your Direct Messages. By using Discord, you allow Discord to provide this basic service. You can stop this by [Disabling]({onClickDisable}) or [Deleting]({onClickDelete}) your account.": "يحتاج Discord إلى تخزين بعض البيانات ومعالجتها ليقدم لك خدمته الأساسية، مثل رسائلك والسيرفرات التي أنت فيها ورسائلك الخاصة. باستخدامك Discord فأنت تسمح له بتقديم هذه الخدمة. ويمكنك إيقاف ذلك عبر [تعطيل]({onClickDisable}) حسابك أو [حذفه]({onClickDelete}).",
+    "Friends & All Servers": "الأصدقاء وكل السيرفرات",
+    "Friends & Small Servers Only": "الأصدقاء والسيرفرات الصغيرة فقط",
+    "Friends Only": "الأصدقاء فقط",
+    "If you need a copy of your personal data from your account's entire history, you can get it here. [Learn more]({article}) about how getting a copy of your data works.": "إذا احتجت نسخة من بياناتك الشخصية من كامل تاريخ حسابك، يمكنك طلبها من هنا. [اعرف المزيد]({article}) عن طريقة الحصول على نسخة من بياناتك.",
+    "Request Data": "طلب البيانات",
+    "Showing message content can only be turned on if you’re in the adult age group. [Learn more]({learnMoreURL})": "لا يمكن تفعيل عرض محتوى الرسائل إلا إذا كنت في فئة البالغين. [اعرف المزيد]({learnMoreURL})",
+    "Your full profile is visible to friends and any server you join with 200 or fewer members. Everyone else sees a limited version.": "ملفك الشخصي الكامل يظهر للأصدقاء ولأي سيرفر تنضم إليه فيه 200 عضو أو أقل. والبقية يرون نسخة محدودة.",
+    "Your full profile is visible to friends and any server you join.": "ملفك الشخصي الكامل يظهر للأصدقاء ولأي سيرفر تنضم إليه.",
+    "Your full profile is visible to friends. Everyone else sees a limited version.": "ملفك الشخصي الكامل يظهر للأصدقاء. والبقية يرون نسخة محدودة."
 };
 
 // Texts that stay in English on purpose, so they don't show up in the "untranslated" list:

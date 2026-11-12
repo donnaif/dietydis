@@ -94,7 +94,7 @@ const settings = definePluginSettings({
             { label: "العربية", value: "ar", default: true },
             { label: "English", value: "en" }
         ],
-        onChange: applyLanguage
+        onChange: switchLanguage
     },
     autoDirection: {
         type: OptionType.BOOLEAN,
@@ -164,6 +164,15 @@ function applyLanguage() {
     applyStyle();
 }
 
+// Much of Discord's text is rendered once and never re-read, so switching live leaves a mix of
+// both languages. Apply what we can at once, then reload so the whole interface follows.
+let reloadTimer: ReturnType<typeof setTimeout> | undefined;
+function switchLanguage() {
+    applyLanguage();
+    clearTimeout(reloadTimer);
+    reloadTimer = setTimeout(() => location.reload(), 600);
+}
+
 // Earlier versions had two on/off switches instead of the language choice
 function migrateOldSettings() {
     const store = settings.store as any;
@@ -174,7 +183,11 @@ function migrateOldSettings() {
 
 function LanguageSettingsPage() {
     const { uiLanguage } = settings.use(["uiLanguage"]);
-    return <LanguagePage value={uiLanguage === "en" ? "en" : "ar"} onChange={(v: UiLanguage) => { settings.store.uiLanguage = v; applyLanguage(); }} />;
+    return <LanguagePage value={uiLanguage === "en" ? "en" : "ar"} onChange={(v: UiLanguage) => {
+        if (v === (settings.store.uiLanguage === "en" ? "en" : "ar")) return;
+        settings.store.uiLanguage = v;
+        switchLanguage();
+    }} />;
 }
 
 const LANGUAGE_ENTRY_KEY = "dietydis_language";

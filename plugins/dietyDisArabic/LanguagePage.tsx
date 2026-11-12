@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { Button } from "@components/Button";
 import { Heading } from "@components/Heading";
 import { Paragraph } from "@components/Paragraph";
 import type { IconProps } from "@utils/types";
@@ -91,13 +90,10 @@ export function LanguagePage({ value, onChange }: { value: UiLanguage; onChange(
             </div>
 
             <Paragraph>
-                الخطوط العربية واتجاه النص تبقى تعمل في اللغتين. بعض النصوص لا تتغير إلا بعد إعادة التحميل.
+                عند تغيير اللغة يُعاد تحميل Discord تلقائياً لتتغير الواجهة كلها. الخطوط العربية واتجاه النص تبقى تعمل في اللغتين.
                 <br />
-                Arabic fonts and text direction keep working in both. Some texts only change after a reload.
+                Changing the language reloads Discord so the whole interface switches. Arabic fonts and text direction keep working in both.
             </Paragraph>
-            <div>
-                <Button size="small" onClick={() => location.reload()}>إعادة التحميل · Reload</Button>
-            </div>
         </div>
     );
 }

@@ -84,7 +84,7 @@ try {
         Step "Building the Windows installer"
         Run "pnpm" @("build")
         Run "pnpm" @("exec", "electron-builder", "--win", "nsis", "--x64")
-        $exe = Get-ChildItem (Join-Path $Vesktop "dist") -Filter "DietyDis-Setup-*.exe" | Select-Object -First 1
+        $exe = Get-ChildItem (Join-Path $Vesktop "dist") -Filter "DietyDis-Setup-*.exe" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
         Write-Host "`nInstaller: $($exe.FullName)" -ForegroundColor Green
     }
     if (-not $NoStart) {

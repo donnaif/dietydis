@@ -13,7 +13,7 @@ import { PluginNative } from "@utils/types";
 import { showToast, TabBar, useEffect, useMemo, useState } from "@webpack/common";
 
 import {
-    buildCss, buildThemeFile, CODE_FONTS, COLOR_DEFS, ColorDef, css, FONTS, GROUPS, hasEditorData, HIDE_DEFS,
+    buildCss, buildThemeFile, CODE_FONTS, DIETYDIS_LOGO, COLOR_DEFS, ColorDef, css, FONTS, GROUPS, hasEditorData, HIDE_DEFS,
     newDraft, parseHex, readThemeFile, TEMPLATES, ThemeDraft, themeFileName, toHex
 } from "./model";
 import {
@@ -306,7 +306,7 @@ function BackgroundSection({ draft }: { draft: ThemeDraft; }) {
             {bg.type === "image" && (
                 <>
                     <div className="dd-te-buttons">
-                        <Button size="small" onClick={pick}>{t("اختيار صورة من جهازك", "Choose an image")}</Button>
+                        <Button size="small" onClick={pick}>{bg.image ? t("تغيير الصورة", "Change image") : t("اختيار صورة من جهازك", "Choose an image")}</Button>
                         {bg.image && <Button size="small" variant="dangerSecondary" onClick={() => update(d => { d.background.image = ""; })}>{t("إزالة الصورة", "Remove image")}</Button>}
                     </div>
                     <Field label={t("أو رابط صورة", "Or an image link")} hint={t("الصورة من جهازك تُحفظ داخل ملف الثيم، فيعمل عند أي شخص.", "An image from your computer is stored inside the theme file, so it works for anyone.")}>
@@ -322,7 +322,34 @@ function BackgroundSection({ draft }: { draft: ThemeDraft; }) {
                             }}
                         />
                     </Field>
-                    {bg.image && <div className="dd-te-thumb" style={{ backgroundImage: `url("${bg.image.replace(/"/g, "%22")}")` }} />}
+                    {bg.image && (
+                        <div
+                            className="dd-te-thumb"
+                            style={{
+                                backgroundImage: `url("${bg.image.replace(/"/g, "%22")}")`,
+                                backgroundSize: bg.fit === "repeat" ? "auto" : bg.fit,
+                                backgroundRepeat: bg.fit === "repeat" ? "repeat" : "no-repeat",
+                                backgroundPosition: bg.position,
+                                filter: `brightness(${100 - bg.dim}%) saturate(${bg.saturate}%)`
+                            }}
+                        />
+                    )}
+                    <div className="dd-te-grid2">
+                        <Field label={t("طريقة العرض", "Fit")}>
+                            <Segmented
+                                value={bg.fit}
+                                options={[["cover", "ملء الشاشة", "Fill"], ["contain", "الصورة كاملة", "Whole image"], ["repeat", "تكرار", "Tile"]]}
+                                onChange={v => set("fit", v)}
+                            />
+                        </Field>
+                        <Field label={t("الموضع", "Position")}>
+                            <Segmented
+                                value={bg.position}
+                                options={[["top", "أعلى", "Top"], ["center", "الوسط", "Center"], ["bottom", "أسفل", "Bottom"]]}
+                                onChange={v => set("position", v)}
+                            />
+                        </Field>
+                    </div>
                 </>
             )}
 
@@ -342,18 +369,168 @@ function BackgroundSection({ draft }: { draft: ThemeDraft; }) {
 
             {bg.type !== "none" && (
                 <div className="dd-te-grid2">
-                    <Field label={t("شفافية اللوحات فوق الخلفية", "Panel opacity over the background")} hint={t("أقل = الخلفية أوضح", "Lower = background shows more")}>
-                        <Range value={bg.panelOpacity} min={0} max={100} unit="%" onChange={v => set("panelOpacity", v)} />
-                    </Field>
                     <Field label={t("التمويه", "Blur")}>
                         <Range value={bg.blur} min={0} max={30} unit="px" onChange={v => set("blur", v)} />
                     </Field>
                     <Field label={t("التعتيم", "Darken")}>
                         <Range value={bg.dim} min={0} max={90} unit="%" onChange={v => set("dim", v)} />
                     </Field>
+                    <Field label={t("تشبّع الألوان", "Saturation")} hint={t("0% = أبيض وأسود", "0% = black and white")}>
+                        <Range value={bg.saturate} min={0} max={200} step={5} unit="%" onChange={v => set("saturate", v)} />
+                    </Field>
+                </div>
+            )}
+
+            <h3 className="dd-te-h">{t("الشفافية", "Transparency")}</h3>
+            <Toggle
+                label={t("اجعل لوحات التطبيق شفافة", "Make the app's panels see-through")}
+                checked={bg.transparentApp}
+                onChange={v => set("transparentApp", v)}
+            />
+            {(bg.type !== "none" || bg.transparentApp) && (
+                <Field label={t("شفافية اللوحات", "Panel opacity")} hint={t("أقل = يظهر ما خلف التطبيق أكثر", "Lower = more of what's behind shows through")}>
+                    <Range value={bg.panelOpacity} min={0} max={100} unit="%" onChange={v => set("panelOpacity", v)} />
+                </Field>
+            )}
+            <WindowEffect onPicked={effect => { if (effect !== "none" && !bg.transparentApp) set("transparentApp", true); }} />
+        </div>
+    );
+}
+
+// ---- Window transparency (a DietyDis/Vesktop window setting, not part of the theme file) ----
+
+type WinEffect = "none" | "transparent" | "mica" | "acrylic" | "tabbed";
+
+function vesktopSettings(): any {
+    return (window as any).Vesktop?.Settings?.store;
+}
+
+function getWinEffect(): WinEffect {
+    const opt = vesktopSettings()?.transparencyOption;
+    if (opt && opt !== "none") return opt;
+    return Settings.transparent ? "transparent" : "none";
+}
+
+function WindowEffect({ onPicked }: { onPicked(v: WinEffect): void; }) {
+    const [effect, setEffect] = useState<WinEffect>(getWinEffect);
+    const [initial] = useState<WinEffect>(getWinEffect);
+    const vesktop = vesktopSettings();
+    const materials = !!vesktop && !!(window as any).VesktopNative?.app?.supportsWindowsTransparency?.();
+
+    const pick = (v: WinEffect) => {
+        if (vesktop) vesktop.transparencyOption = v === "mica" || v === "acrylic" || v === "tabbed" ? v : "none";
+        Settings.transparent = v === "transparent";
+        setEffect(v);
+        onPicked(v);
+    };
+
+    const options: [WinEffect, string, string][] = [
+        ["none", "بدون", "None"],
+        ["transparent", "شفاف تماماً", "Fully clear"],
+        ...(materials ? [
+            ["acrylic", "زجاج مموّه (Acrylic)", "Frosted glass (Acrylic)"],
+            ["mica", "Mica (لون الخلفية)", "Mica (wallpaper tint)"],
+            ["tabbed", "Mica أقوى (Tabbed)", "Stronger Mica (Tabbed)"]
+        ] as [WinEffect, string, string][] : [])
+    ];
+
+    return (
+        <div className="dd-te-card">
+            <span className="dd-te-label">{t("ما يظهر خلف التطبيق", "What shows behind the app")}</span>
+            <p className="dd-te-hint">
+                {t("إعداد للنافذة على جهازك، ولا يُحفظ داخل ملف الثيم. يحتاج إعادة تشغيل التطبيق، ويعمل مع اللوحات الشفافة أعلاه.",
+                    "A window setting on this computer, not saved in the theme file. Needs an app restart, and works together with see-through panels above.")}
+            </p>
+            <Segmented value={effect} options={options} onChange={pick} />
+            {effect !== initial && (
+                <div className="dd-te-buttons">
+                    <Button size="small" onClick={() => (window as any).VesktopNative?.app?.relaunch?.()}>{t("إعادة تشغيل التطبيق الآن", "Restart the app now")}</Button>
                 </div>
             )}
         </div>
+    );
+}
+
+function Segmented<T extends string>({ value, options, onChange }: { value: T; options: readonly (readonly [T, string, string])[]; onChange(v: T): void; }) {
+    return (
+        <div className="dd-te-segmented" role="radiogroup">
+            {options.map(([v, ar, en]) => (
+                <button key={v} role="radio" aria-checked={value === v} className={value === v ? "dd-te-on" : ""} onClick={() => onChange(v)}>{t(ar, en)}</button>
+            ))}
+        </div>
+    );
+}
+
+// ---- Home button icon, server and avatar shapes ----
+
+function IconsSection({ draft }: { draft: ThemeDraft; }) {
+    const ic = draft.icons;
+    const set = <K extends keyof ThemeDraft["icons"]>(k: K, v: ThemeDraft["icons"][K]) => update(d => { d.icons[k] = v; }, "icons-" + k);
+    const shapes = [["default", "مثل Discord", "Like Discord"], ["circle", "دائرة", "Circle"], ["rounded", "مربع بحواف دائرية", "Rounded square"], ["square", "مربع", "Square"]] as const;
+
+    const pickHome = async () => {
+        try {
+            const res = await native()?.pickImage();
+            if (!res) return;
+            if ("error" in res) return fail(t("الصورة أكبر من 4 ميجابايت", "The image is larger than 4 MB"));
+            update(d => { d.icons.home = "custom"; d.icons.homeImage = res.dataUrl; });
+        } catch (e) { fail(String(e)); }
+    };
+
+    const homeHex = parseHex(ic.homeBg);
+    return (
+        <div className="dd-te-section">
+            <h3 className="dd-te-h">{t("أيقونة زر الرئيسية (Home)", "Home button icon")}</h3>
+            <p className="dd-te-hint">{t("الزر أعلى قائمة السيرفرات، الذي يفتح الرسائل الخاصة.", "The button at the top of the server list that opens your Direct Messages.")}</p>
+            <Segmented
+                value={ic.home}
+                options={[["default", "شعار Discord", "Discord logo"], ["dietydis", "شعار DietyDis", "DietyDis logo"], ["custom", "صورة من جهازك", "Your own image"]]}
+                onChange={v => { if (v === "custom" && !ic.homeImage) pickHome(); else set("home", v); }}
+            />
+            {ic.home === "custom" && (
+                <>
+                    <div className="dd-te-buttons">
+                        <Button size="small" onClick={pickHome}>{ic.homeImage ? t("تغيير الصورة", "Change image") : t("اختيار صورة", "Choose an image")}</Button>
+                    </div>
+                    <Field label={t("طريقة العرض", "Fit")}>
+                        <Segmented value={ic.homeFit} options={[["cover", "ملء الزر", "Fill the button"], ["contain", "أيقونة في الوسط", "Icon in the middle"]]} onChange={v => set("homeFit", v)} />
+                    </Field>
+                </>
+            )}
+            <Field label={t("لون خلفية الزر", "Button background")}>
+                <div className="dd-te-buttons">
+                    <input type="color" className="dd-te-colorbox" value={homeHex ? toHex({ ...homeHex, a: 1 }).slice(0, 7) : "#5865f2"} onChange={e => set("homeBg", e.currentTarget.value)} />
+                    <Button size="small" variant="secondary" disabled={!homeHex} onClick={() => set("homeBg", "")}>{t("مثل Discord", "Like Discord")}</Button>
+                </div>
+            </Field>
+            <div className="dd-te-home-preview">
+                <span
+                    className="dd-te-home-icon"
+                    style={{
+                        backgroundColor: homeHex ? css(homeHex) : "var(--brand-500)",
+                        backgroundImage: ic.home === "dietydis" ? `url("${DIETYDIS_LOGO}")` : ic.home === "custom" && ic.homeImage ? `url("${ic.homeImage}")` : undefined,
+                        backgroundSize: ic.home === "custom" && ic.homeFit === "cover" ? "cover" : "70%"
+                    }}
+                >
+                    {ic.home === "default" && <DiscordMark />}
+                </span>
+                <span className="dd-te-hint">{t("معاينة", "Preview")}</span>
+            </div>
+
+            <h3 className="dd-te-h">{t("شكل أيقونات السيرفرات", "Server icon shape")}</h3>
+            <Segmented value={ic.guildShape} options={shapes} onChange={v => set("guildShape", v)} />
+            <h3 className="dd-te-h">{t("شكل الصور الشخصية", "Avatar shape")}</h3>
+            <Segmented value={ic.avatarShape} options={shapes} onChange={v => set("avatarShape", v)} />
+            <p className="dd-te-hint">{t("تجريبي: الأشكال تغيّر قناع Discord للأيقونات، فقد تتداخل نقطة الحالة مع الصورة.", "Beta: shapes replace Discord's icon masks, so the status dot may overlap the picture.")}</p>
+        </div>
+    );
+}
+
+function DiscordMark() {
+    return (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+            <path d="M19.7 5.3A17 17 0 0 0 15.4 4l-.5 1.1a15.6 15.6 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.3 1.3C1.6 9.4.9 13.3 1.2 17.2A17.2 17.2 0 0 0 6.5 20l1.1-1.8a11 11 0 0 1-1.7-.8l.4-.3a12.2 12.2 0 0 0 11.4 0l.4.3a11 11 0 0 1-1.7.8l1.1 1.8a17.1 17.1 0 0 0 5.3-2.8c.4-4.5-.7-8.4-3.1-11.9ZM8.5 14.8c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2Zm7 0c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2Z" />
+        </svg>
     );
 }
 
@@ -440,7 +617,7 @@ function CodeSection({ draft }: { draft: ThemeDraft; }) {
 
 // ---------------------------------------------------------------- the tab
 
-const enum Section { START, COLORS, BACKGROUND, SHAPE, HIDE, CODE }
+const enum Section { START, COLORS, BACKGROUND, SHAPE, ICONS, HIDE, CODE }
 
 export function ThemeEditorTab() {
     const draft = useDraft();
@@ -523,6 +700,7 @@ export function ThemeEditorTab() {
                 <TabBar.Item className="vc-settings-tab-bar-item" id={Section.COLORS}>{t("الألوان", "Colours")}</TabBar.Item>
                 <TabBar.Item className="vc-settings-tab-bar-item" id={Section.BACKGROUND}>{t("الخلفية", "Background")}</TabBar.Item>
                 <TabBar.Item className="vc-settings-tab-bar-item" id={Section.SHAPE}>{t("الشكل والخطوط", "Shape & fonts")}</TabBar.Item>
+                <TabBar.Item className="vc-settings-tab-bar-item" id={Section.ICONS}>{t("الأيقونات والأشكال", "Icons & shapes")}</TabBar.Item>
                 <TabBar.Item className="vc-settings-tab-bar-item" id={Section.HIDE}>{t("إخفاء عناصر", "Hide parts")}</TabBar.Item>
                 <TabBar.Item className="vc-settings-tab-bar-item" id={Section.CODE}>{t("الكود", "Code")}</TabBar.Item>
             </TabBar>
@@ -531,6 +709,7 @@ export function ThemeEditorTab() {
             {section === Section.COLORS && <ColorsSection draft={draft} />}
             {section === Section.BACKGROUND && <BackgroundSection draft={draft} />}
             {section === Section.SHAPE && <ShapeSection draft={draft} />}
+            {section === Section.ICONS && <IconsSection draft={draft} />}
             {section === Section.HIDE && <HideSection draft={draft} />}
             {section === Section.CODE && <CodeSection draft={draft} />}
         </div>

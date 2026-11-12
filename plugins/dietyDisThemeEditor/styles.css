@@ -271,7 +271,35 @@
     background: var(--background-mod-subtle);
 }
 
+.dd-te-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    background: var(--background-mod-subtle);
+}
+
+.dd-te-home-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dd-te-home-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
 .dd-te-segmented {
+    flex-wrap: wrap;
     display: inline-flex;
     align-self: flex-start;
     padding: 3px;

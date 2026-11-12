@@ -7,6 +7,11 @@
 // The theme being edited, the Discord variables each option controls, the templates,
 // and turning a theme into a Vencord .theme.css file (and back).
 
+import logoBase64 from "file://./home-dietydis.png?base64";
+
+const dietydisLogo = `data:image/png;base64,${logoBase64}`;
+export const DIETYDIS_LOGO = dietydisLogo;
+
 export interface ThemeDraft {
     meta: { name: string; author: string; description: string; version: string; };
     /** colour key -> "#rrggbb" or "#rrggbbaa"; missing = Discord's own colour */
@@ -21,20 +26,39 @@ export interface ThemeDraft {
         dim: number;
         /** how opaque Discord's panels stay over the image/gradient (%) */
         panelOpacity: number;
+        fit: "cover" | "contain" | "repeat";
+        position: "center" | "top" | "bottom";
+        saturate: number;
+        /** see-through panels even without an image (for a transparent window) */
+        transparentApp: boolean;
     };
     shape: { radius: number; font: string; codeFont: string; };
+    icons: {
+        home: "default" | "dietydis" | "custom";
+        homeImage: string;
+        homeFit: "cover" | "contain";
+        homeBg: string;
+        guildShape: Shape;
+        avatarShape: Shape;
+    };
     hide: Record<string, boolean>;
     customCss: string;
     /** file in the themes folder, once saved */
     fileName?: string;
 }
 
+export type Shape = "default" | "circle" | "rounded" | "square";
+
 export function newDraft(): ThemeDraft {
     return {
         meta: { name: "", author: "", description: "", version: "1.0.0" },
         colors: {},
-        background: { type: "none", image: "", from: "#1e1f4b", to: "#0b0c1a", angle: 135, blur: 0, dim: 30, panelOpacity: 80 },
+        background: {
+            type: "none", image: "", from: "#1e1f4b", to: "#0b0c1a", angle: 135, blur: 0, dim: 30, panelOpacity: 80,
+            fit: "cover", position: "center", saturate: 100, transparentApp: false
+        },
         shape: { radius: 100, font: "", codeFont: "" },
+        icons: { home: "default", homeImage: "", homeFit: "cover", homeBg: "", guildShape: "default", avatarShape: "default" },
         hide: {},
         customCss: ""
     };
@@ -53,6 +77,7 @@ export function normalizeDraft(d: any): ThemeDraft {
         colors: { ...d.colors },
         background: { ...base.background, ...d.background },
         shape: { ...base.shape, ...d.shape },
+        icons: { ...base.icons, ...d.icons },
         hide: { ...d.hide },
         customCss: typeof d.customCss === "string" ? d.customCss : "",
         fileName: typeof d.fileName === "string" ? d.fileName : undefined
@@ -230,7 +255,7 @@ export function buildVarDecls(d: ThemeDraft, defaults: Record<string, string>, i
     const imp = important ? " !important" : "";
     const lines: string[] = [];
     const set = (name: string, value: string) => lines.push(`    ${name}: ${value}${imp};`);
-    const fading = d.background.type !== "none";
+    const fading = d.background.type !== "none" || d.background.transparentApp;
     const opacity = Math.max(0, Math.min(100, d.background.panelOpacity));
 
     for (const def of COLOR_DEFS) {
@@ -281,33 +306,99 @@ export function buildCss(d: ThemeDraft, defaults: Record<string, string>) {
     if (decls.length) out += `${VAR_SCOPE} {\n${decls.join("\n")}\n}\n`;
 
     const bg = d.background;
+    const black = { r: 0, g: 0, b: 0, a: 1 };
+    const size = bg.fit === "repeat" ? "auto" : bg.fit;
     const layer = bg.type === "image" && bg.image
-        ? `url("${bg.image.replace(/"/g, "%22")}") center / cover no-repeat`
+        ? `url("${bg.image.replace(/"/g, "%22")}") ${bg.position} / ${size} ${bg.fit === "repeat" ? "repeat" : "no-repeat"}`
         : bg.type === "gradient"
-            ? `linear-gradient(${Math.round(bg.angle)}deg, ${css(parseHex(bg.from) ?? { r: 0, g: 0, b: 0, a: 1 })}, ${css(parseHex(bg.to) ?? { r: 0, g: 0, b: 0, a: 1 })})`
+            ? `linear-gradient(${Math.round(bg.angle)}deg, ${css(parseHex(bg.from) ?? black)}, ${css(parseHex(bg.to) ?? black)})`
             : "";
-    if (layer) {
+    if (layer || bg.transparentApp) {
         out += `
-/* Background */
+/* Background${bg.transparentApp ? " (transparent app)" : ""} */
 html, body, #app-mount {
     background: transparent !important;
 }
-body::before {
+`;
+    }
+    if (layer) {
+        out += `body::before {
     content: "";
     position: fixed;
     inset: ${bg.blur ? -bg.blur * 2 : 0}px;
     z-index: -1;
     pointer-events: none;
     background: ${layer};
-    filter: blur(${bg.blur}px) brightness(${100 - bg.dim}%);
+    filter: blur(${bg.blur}px) brightness(${100 - bg.dim}%) saturate(${bg.saturate}%);
 }
 `;
     }
+
+    out += iconsCss(d);
 
     const hidden = HIDE_DEFS.filter(h => d.hide[h.key]);
     if (hidden.length) out += `\n/* Hidden parts */\n${hidden.map(h => h.css).join(",\n")} {\n    display: none !important;\n}\n`;
 
     if (d.customCss.trim()) out += `\n/* Custom CSS */\n${d.customCss.trim()}\n`;
+    return out;
+}
+
+// ---- Home button and icon shapes ----
+
+export const SHAPE_RADIUS: Record<Exclude<Shape, "default">, string> = { circle: "50%", rounded: "30%", square: "6px" };
+
+const HOME = '[data-list-item-id="guildsnav___home"]';
+
+function iconsCss(d: ThemeDraft) {
+    const ic = d.icons;
+    let out = "";
+    const image = ic.home === "dietydis" ? dietydisLogo : ic.home === "custom" ? ic.homeImage : "";
+    if (image) {
+        const fit = ic.home === "dietydis" ? "70%" : ic.homeFit === "contain" ? "70%" : "cover";
+        out += `
+/* Home button icon */
+${HOME} svg,
+${HOME} img {
+    opacity: 0 !important;
+}
+${HOME} {
+    background-image: url("${image.replace(/"/g, "%22")}") !important;
+    background-size: ${fit} !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+}
+`;
+    }
+    const homeBg = parseHex(ic.homeBg);
+    if (homeBg) out += `${HOME} {\n    background-color: ${css(homeBg)} !important;\n}\n`;
+
+    if (ic.guildShape !== "default") {
+        const r = SHAPE_RADIUS[ic.guildShape];
+        out += `
+/* Server icon shape */
+nav[class*="guilds"] foreignObject[mask] {
+    mask: none !important;
+}
+nav[class*="guilds"] [data-list-item-id^="guildsnav___"],
+nav[class*="guilds"] foreignObject img {
+    border-radius: ${r} !important;
+    overflow: hidden;
+}
+`;
+    }
+    if (ic.avatarShape !== "default") {
+        const r = SHAPE_RADIUS[ic.avatarShape];
+        out += `
+/* Avatar shape */
+foreignObject[mask^="url(#svg-mask-avatar"] {
+    mask: none !important;
+}
+foreignObject[mask^="url(#svg-mask-avatar"] img,
+img[class*="avatar"] {
+    border-radius: ${r} !important;
+}
+`;
+    }
     return out;
 }
 

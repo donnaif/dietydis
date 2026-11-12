@@ -35,10 +35,12 @@ if (-not (Test-Path $Vesktop)) { Run "git" @("clone", "--depth", "1", "https://g
 
 Step "Copying DietyDis plugins into Vencord"
 $userplugins = Join-Path $Vencord "src\userplugins"
+# userplugins only ever holds our copies (it is git-ignored in Vencord), so start clean:
+# a plugin removed from the kit must not linger in the build
+if (Test-Path $userplugins) { Remove-Item $userplugins -Recurse -Force }
 New-Item -ItemType Directory -Force $userplugins | Out-Null
 Get-ChildItem (Join-Path $Kit "plugins") -Directory | ForEach-Object {
     $dest = Join-Path $userplugins $_.Name
-    if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
     Copy-Item $_.FullName $dest -Recurse
     Write-Host "  + $($_.Name)"
 }

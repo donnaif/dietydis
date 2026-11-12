@@ -1,0 +1,9 @@
+# Build output and dependencies (source lives in %USERPROFILE%\DietyDis-src)
+node_modules/
+dist/
+*.log
+
+# Windows / editors
+Thumbs.db
+Desktop.ini
+.vscode/

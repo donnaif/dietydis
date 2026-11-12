@@ -45,6 +45,9 @@ Get-ChildItem (Join-Path $Kit "plugins") -Directory | ForEach-Object {
     Write-Host "  + $($_.Name)"
 }
 
+Step "Patching Vencord (Theme Editor tab in Settings > Themes)"
+Run "node" @((Join-Path $Kit "scripts\patch-vencord.mjs"), $Vencord)
+
 Step "Building Vencord"
 Push-Location $Vencord
 try {

@@ -6,6 +6,7 @@
 
 import { copyFileSync, existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname, join, resolve } from "path";
+import { fileURLToPath } from "url";
 
 const root = resolve(process.argv[2] ?? ".");
 const icon = process.argv[3];
@@ -36,8 +37,12 @@ pkg.build.nsis = {
     shortcutName: "DietyDis",
     uninstallDisplayName: "DietyDis"
 };
-// No auto-update from Vesktop's GitHub releases (DietyDis gets its own updater later)
-pkg.build.publish = null;
+// DietyDis has its own version and updates from its own GitHub releases (dietydis.config.json)
+const configPath = fileURLToPath(new URL("../dietydis.config.json", import.meta.url));
+const config = JSON.parse(readFileSync(configPath, "utf8"));
+pkg.version = config.version;
+pkg.build.publish = { provider: "github", owner: config.github.owner, repo: config.github.repo, releaseType: "release" };
+const releasesUrl = `https://github.com/${config.github.owner}/${config.github.repo}/releases`;
 // Ship our Vencord build (with DietyDis plugins) inside the app: resources\vencord
 if (vencordDist) {
     if (!existsSync(join(vencordDist, "vencordDesktopMain.js"))) {
@@ -80,9 +85,17 @@ const edits = {
     ],
     "src/main/updater.ts": [
         ['title: "Vesktop Updater"', 'title: "DietyDis Updater"'],
+        // Update checks are on again (they were off before DietyDis had its own releases)
         [
-            "const isOutdated = autoUpdater.checkForUpdates().then(res => Boolean(res?.isUpdateAvailable));",
-            "// DietyDis: Vesktop update checks disabled\nconst isOutdated = Promise.resolve(false);"
+            "// DietyDis: Vesktop update checks disabled\nconst isOutdated = Promise.resolve(false);",
+            "const isOutdated = autoUpdater.checkForUpdates().then(res => Boolean(res?.isUpdateAvailable));"
+        ]
+    ],
+    // Portable builds can't self-update: the button opens the DietyDis release page instead of Vesktop's
+    "static/views/updater/script.js": [
+        [
+            "window.open(`https://github.com/Vencord/Vesktop/releases/tag/v${update.version}`);",
+            `window.open(\`${releasesUrl}/tag/v\${update.version}\`);`
         ]
     ],
     "build/installer.nsh": [["$LocalAppData\\vesktop", "$LocalAppData\\dietydis", true]],

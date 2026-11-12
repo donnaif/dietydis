@@ -959,7 +959,9 @@ export const discordStrings: Record<string, string> = {
     "Your Country/Region determines your pricing, available payment methods, and which gift cards you can redeem. You can change it once every 90 days.": "دولتك/منطقتك تحدد الأسعار وطرق الدفع المتاحة وبطاقات الهدايا التي يمكنك استبدالها. ويمكنك تغييرها مرة كل 90 يوماً.",
     "Your Favorites stay saved, even if you toggle this off. [Learn more]({helpCenterLink}).": "تبقى مفضلتك محفوظة حتى لو أوقفت هذا الخيار. [اعرف المزيد]({helpCenterLink}).",
     "unread, {channelName} (group message)": "غير مقروءة، {channelName} (رسالة جماعية)",
-    "{brand} ending in **{last_4}**": "{brand} المنتهية بـ **{last_4}**"
+    "{brand} ending in **{last_4}**": "{brand} المنتهية بـ **{last_4}**",
+    "Give feedback": "شاركنا رأيك",
+    "How is blocking users on Discord working for you?": "ما رأيك في طريقة حظر المستخدمين في Discord؟"
 };
 
 // Texts that stay in English on purpose, so they don't show up in the "untranslated" list:

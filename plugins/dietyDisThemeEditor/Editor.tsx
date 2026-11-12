@@ -16,9 +16,10 @@ import {
     buildCss, buildThemeFile, CODE_FONTS, DIETYDIS_LOGO, COLOR_DEFS, ColorDef, css, FONTS, GROUPS, hasEditorData, HIDE_DEFS,
     newDraft, parseHex, readThemeFile, TEMPLATES, ThemeDraft, themeFileName, toHex
 } from "./model";
+import { LivePreview, WinEffect } from "./Preview";
 import {
     applyPreview, canRedo, canUndo, ensureLoaded, getDefaults, isArabic, notify, patchQuietly, readDefaults, redo, replaceDraft,
-    settings, t, undo, update, useDraft
+    setFocus, settings, t, undo, update, useDraft
 } from "./store";
 
 type Native = PluginNative<typeof import("./native")>;
@@ -73,7 +74,13 @@ function ColorRow({ def, draft }: { def: ColorDef; draft: ThemeDraft; }) {
     }, coalesce);
 
     return (
-        <div className={"dd-te-color" + (parsed ? "" : " dd-te-color-default")}>
+        <div
+            className={"dd-te-color" + (parsed ? "" : " dd-te-color-default")}
+            onMouseEnter={() => setFocus(def.key)}
+            onMouseLeave={() => setFocus("")}
+            onFocus={() => setFocus(def.key)}
+            onBlur={() => setFocus("")}
+        >
             <span className="dd-te-color-name">{t(def.ar, def.en)}</span>
             <span className="dd-te-swatch" style={{ background: css(shown) }}>
                 <input
@@ -119,50 +126,6 @@ function ColorRow({ def, draft }: { def: ColorDef; draft: ThemeDraft; }) {
         </div>
     );
 }
-
-// ---------------------------------------------------------------- preview card
-
-function PreviewCard() {
-    return (
-        <div className="dd-te-mock" dir="ltr" aria-hidden="true">
-            <div className="dd-te-mock-servers">
-                <span className="dd-te-mock-guild dd-te-mock-guild-active" />
-                <span className="dd-te-mock-guild" />
-                <span className="dd-te-mock-guild" />
-            </div>
-            <div className="dd-te-mock-sidebar">
-                <div className="dd-te-mock-heading">DietyDis</div>
-                <div className="dd-te-mock-channel dd-te-mock-channel-selected"># {t("عام", "general")}</div>
-                <div className="dd-te-mock-channel dd-te-mock-channel-hover"># {t("الألعاب", "gaming")}</div>
-                <div className="dd-te-mock-channel"># {t("الصور", "media")}</div>
-                <div className="dd-te-mock-user">
-                    <span className="dd-te-mock-avatar"><span className="dd-te-mock-status" /></span>
-                    <span>{t("أحمد", "Ahmed")}</span>
-                </div>
-            </div>
-            <div className="dd-te-mock-chat">
-                <div className="dd-te-mock-message">
-                    <span className="dd-te-mock-avatar" />
-                    <div dir="auto">
-                        <div><span className="dd-te-mock-author">{t("سارة", "Sara")}</span> <span className="dd-te-mock-time">{t("اليوم 9:41", "Today 9:41")}</span></div>
-                        <div className="dd-te-mock-text">
-                            {t("أهلاً ", "Hey ")}<span className="dd-te-mock-mention">@{t("أحمد", "Ahmed")}</span>
-                            {t("، شوف هذا ", ", check this ")}<span className="dd-te-mock-link">dietydis.app</span>
-                        </div>
-                        <div className="dd-te-mock-muted">{t("نص خافت", "muted text")}</div>
-                    </div>
-                </div>
-                <div className="dd-te-mock-popout">
-                    <div className="dd-te-mock-strong">{t("قائمة", "Menu")}</div>
-                    <span className="dd-te-mock-button">{t("زر", "Button")}</span>
-                </div>
-                <div className="dd-te-mock-input">{t("اكتب رسالة…", "Message #general")}</div>
-            </div>
-        </div>
-    );
-}
-
-// ---------------------------------------------------------------- sections
 
 function StartSection({ draft }: { draft: ThemeDraft; }) {
     const [mine, setMine] = useState<{ fileName: string; name: string; }[]>([]);
@@ -392,14 +355,16 @@ function BackgroundSection({ draft }: { draft: ThemeDraft; }) {
                     <Range value={bg.panelOpacity} min={0} max={100} unit="%" onChange={v => set("panelOpacity", v)} />
                 </Field>
             )}
-            <WindowEffect onPicked={effect => { if (effect !== "none" && !bg.transparentApp) set("transparentApp", true); }} />
+            <WindowEffect onPicked={effect => {
+                if (effect !== "none" && !bg.transparentApp) set("transparentApp", true);
+                else notify(); // redraw the preview with the new window effect
+            }} />
         </div>
     );
 }
 
 // ---- Window transparency (a DietyDis/Vesktop window setting, not part of the theme file) ----
 
-type WinEffect = "none" | "transparent" | "mica" | "acrylic" | "tabbed";
 
 function vesktopSettings(): any {
     return (window as any).Vesktop?.Settings?.store;
@@ -693,7 +658,7 @@ export function ThemeEditorTab() {
             </div>
             <div className="dd-te-status">{status}</div>
 
-            <PreviewCard />
+            <LivePreview draft={draft} winEffect={getWinEffect()} />
 
             <TabBar type="top" look="brand" className="vc-settings-tab-bar" selectedItem={section} onItemSelect={setSection}>
                 <TabBar.Item className="vc-settings-tab-bar-item" id={Section.START}>{t("البداية", "Start")}</TabBar.Item>

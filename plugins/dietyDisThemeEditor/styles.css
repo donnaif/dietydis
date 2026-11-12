@@ -352,172 +352,814 @@
     tab-size: 4;
 }
 
-/* Preview card: uses the theme's variables, which the editor sets on .dd-te-mock */
-.dd-te-mock {
-    display: grid;
-    grid-template-columns: 56px 170px 1fr;
-    height: 210px;
-    overflow: hidden;
+
+/* ---------------------------------------------------------------- Live preview */
+
+.dd-pv {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
     border-radius: 12px;
-    border: 1px solid var(--app-frame-border, var(--border-subtle));
-    background: var(--app-frame-background);
-    font-size: 13px;
-    user-select: none;
+    border: 1px solid var(--border-subtle);
+    background: var(--background-base-lower, var(--background-secondary));
 }
 
-.dd-te-mock-servers {
+.dd-pv-pinned {
+    position: sticky;
+    top: 48px;
+    z-index: 1;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+}
+
+.dd-pv-small .dd-pv-stage {
+    max-width: 520px;
+}
+
+.dd-pv-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.dd-pv-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+.dd-pv-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #23a55a;
+    animation: dd-pv-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes dd-pv-pulse {
+    50% { box-shadow: 0 0 0 4px rgb(35 165 90 / 0.25); }
+}
+
+@keyframes dd-te-focus {
+    50% { outline-color: rgb(240 178 50 / 0.35); }
+}
+
+.dd-pv-views button {
+    padding: 4px 10px;
+    font-size: 13px;
+}
+
+.dd-pv-tool {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: var(--background-mod-subtle);
+    color: var(--text-default);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.dd-pv-tool:hover,
+.dd-pv-tool-on {
+    background: var(--background-mod-strong, var(--background-mod-normal));
+    color: var(--text-strong);
+}
+
+.dd-pv-stage {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+/* Behind the window: a desktop wallpaper, seen through transparent panels */
+.dd-pv-desktop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    background:
+        radial-gradient(circle at 20% 30%, #ff8a5c 0, transparent 40%),
+        radial-gradient(circle at 80% 70%, #4f7cff 0, transparent 45%),
+        linear-gradient(135deg, #2d1b69, #0f3a5f);
+}
+
+/* The mock Discord window. Everything uses Discord's variables, set by the editor on .dd-te-mock */
+.dd-te-mock {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 10px;
+    color: var(--text-default);
+    font-family: var(--font-primary);
+    font-size: 14px;
+    line-height: 1.35;
+    text-align: start;
+    user-select: none;
+    pointer-events: none;
+}
+
+.dd-te-mock * {
+    box-sizing: border-box;
+}
+
+.dd-pv-bg {
+    position: absolute;
+    z-index: -1;
+}
+
+.dd-pv-icon {
+    flex: none;
+    display: block;
+}
+
+.dd-pv-flex {
+    flex: 1;
+}
+
+.dd-pv-strong {
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+.dd-pv-muted {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* The frame colour sits on these (not the window itself) so it covers the background image like in Discord */
+.dd-pv-titlebar,
+.dd-pv-body {
+    background: var(--app-frame-background, var(--background-tertiary));
+}
+
+.dd-pv-titlebar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    height: 30px;
+}
+
+.dd-pv-titlebar-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.dd-pv-winbtns {
+    position: absolute;
+    right: 12px;
+    display: flex;
+    gap: 18px;
+}
+
+.dd-pv-winbtns i {
+    width: 10px;
+    height: 10px;
+    border: 1.5px solid currentColor;
+    border-radius: 2px;
+}
+
+.dd-pv-winbtns i:first-child {
+    height: 0;
+    border-width: 1.5px 0 0;
+    margin-top: 5px;
+}
+
+.dd-pv-body {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Server list */
+.dd-pv-servers {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    padding: 10px 0;
+    flex: none;
+    width: 72px;
+    padding: 6px 0;
     background: var(--background-base-lowest);
 }
 
-.dd-te-mock-guild {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    background: var(--background-surface-higher, var(--background-base-lower));
+.dd-pv-guild-wrap {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    width: 100%;
 }
 
-.dd-te-mock-guild-active {
-    background: var(--brand-500);
+.dd-pv-pill {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 4px;
+    height: 8px;
+    margin-top: -4px;
+    border-radius: 0 4px 4px 0;
+    background: var(--text-strong);
 }
 
-.dd-te-mock-sidebar {
+.dd-pv-pill-active {
+    height: 40px;
+    margin-top: -20px;
+}
+
+.dd-pv-guild {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm, 12px);
+    background-color: var(--background-surface-higher, var(--background-surface-high));
+    background-position: center;
+    background-repeat: no-repeat;
+    color: #fff;
+    font-weight: 600;
+    font-size: 15px;
+    overflow: hidden;
+}
+
+.dd-pv-guild-active {
+    background-color: var(--brand-500);
+}
+
+.dd-pv-home {
+    color: var(--interactive-text-active, var(--text-strong));
+}
+
+.dd-pv-guild-action {
+    color: var(--status-online, #23a55a);
+}
+
+.dd-pv-guild-sep {
+    width: 32px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--border-subtle);
+}
+
+/* Sidebars */
+.dd-pv-sidebar {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    width: 220px;
+    background: var(--background-base-lower);
+    border: 1px solid var(--border-subtle);
+    border-width: 1px 0 0 1px;
+    border-radius: var(--radius-sm, 8px) 0 0 0;
+}
+
+.dd-pv-sidebar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: none;
+    height: 48px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+.dd-pv-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 5px 8px;
+    border-radius: var(--radius-xs, 4px);
+    background: var(--input-background-default, var(--background-base-lowest));
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.dd-pv-search-wide {
+    margin-bottom: 10px;
+    padding: 7px 10px;
+}
+
+.dd-pv-channels {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    flex: 1;
     padding: 8px;
-    background: var(--background-base-lower);
-    border-inline-start: 1px solid var(--border-subtle);
+    overflow: hidden;
 }
 
-.dd-te-mock-heading {
-    padding: 2px 6px 8px;
+.dd-pv-category {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 10px 0 4px;
+    padding: 0 6px;
+    font-size: 11px;
     font-weight: 600;
-    color: var(--text-strong);
-    border-bottom: 1px solid var(--border-subtle);
-    margin-bottom: 4px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--text-muted);
 }
 
-.dd-te-mock-channel {
-    padding: 4px 6px;
-    border-radius: 6px;
+.dd-pv-category:first-child {
+    margin-top: 4px;
+}
+
+.dd-pv-channel {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: var(--radius-xs, 4px);
     color: var(--channels-default);
+    font-weight: 500;
 }
 
-.dd-te-mock-channel-hover {
-    background: var(--background-mod-subtle);
-    color: var(--interactive-text-hover);
+.dd-pv-dm-link {
+    padding: 9px 8px;
 }
 
-.dd-te-mock-channel-selected {
+.dd-pv-channel-selected {
     background: var(--background-mod-normal);
     color: var(--interactive-text-active, var(--text-strong));
 }
 
-.dd-te-mock-user {
+.dd-pv-channel-hover {
+    background: var(--background-mod-subtle);
+    color: var(--interactive-text-hover);
+}
+
+.dd-pv-channel-unread {
+    color: var(--interactive-text-active, var(--text-strong));
+    font-weight: 600;
+}
+
+.dd-pv-unread-dot {
+    position: absolute;
+    left: -8px;
+    width: 4px;
+    height: 8px;
+    border-radius: 0 4px 4px 0;
+    background: var(--text-strong);
+}
+
+.dd-pv-voice-user,
+.dd-pv-dm {
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-top: auto;
-    color: var(--text-strong);
+    gap: 8px;
+    padding: 3px 8px 3px 30px;
+    color: var(--channels-default);
+    font-size: 13px;
 }
 
-.dd-te-mock-avatar {
-    position: relative;
+.dd-pv-dm {
+    padding: 6px 8px;
+    font-size: 14px;
+    border-radius: var(--radius-xs, 4px);
+}
+
+.dd-pv-userpanel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     flex: none;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: var(--background-surface-highest, var(--text-muted));
-}
-
-.dd-te-mock-status {
-    position: absolute;
-    right: -2px;
-    bottom: -2px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--status-online);
-    border: 2px solid var(--background-base-lower);
-}
-
-.dd-te-mock-chat {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 10px 12px;
-    background: var(--chat-background, var(--background-base-low));
-    border-inline-start: 1px solid var(--border-subtle);
-}
-
-.dd-te-mock-message {
-    display: flex;
-    gap: 8px;
-}
-
-.dd-te-mock-author {
-    font-weight: 600;
-    color: var(--text-strong);
-}
-
-.dd-te-mock-time,
-.dd-te-mock-muted {
-    font-size: 11px;
-    color: var(--text-muted);
-}
-
-.dd-te-mock-text {
-    color: var(--text-default);
-}
-
-.dd-te-mock-mention {
-    padding: 0 2px;
-    border-radius: 3px;
-    background: var(--mention-background);
-    color: var(--mention-foreground);
-}
-
-.dd-te-mock-link {
-    color: var(--text-link);
-}
-
-.dd-te-mock-popout {
-    position: absolute;
-    top: 10px;
-    inset-inline-end: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    margin: 8px;
     padding: 8px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm, 8px);
     background: var(--background-surface-high);
     border: 1px solid var(--border-subtle);
 }
 
-.dd-te-mock-strong {
+.dd-pv-userpanel-text,
+.dd-pv-member-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+}
+
+.dd-pv-iconbtn {
+    display: flex;
+    padding: 4px;
+    color: var(--interactive-text-default, var(--channels-default));
+}
+
+/* Avatars and status */
+.dd-pv-avatar {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    border-radius: var(--dd-pv-avatar-radius, 50%);
+    color: #fff;
+    font-weight: 600;
+}
+
+.dd-pv-status {
+    position: absolute;
+    right: -3px;
+    bottom: -3px;
+    width: 40%;
+    height: 40%;
+    min-width: 11px;
+    min-height: 11px;
+    border-radius: 50%;
+    border: 3px solid var(--background-base-lower);
+}
+
+/* Chat */
+.dd-pv-chat {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    background: var(--chat-background, var(--background-base-low));
+    border-top: 1px solid var(--border-subtle);
+}
+
+.dd-pv-chat-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    height: 48px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--channels-default);
+}
+
+.dd-pv-head-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--border-subtle);
+}
+
+.dd-pv-tab {
+    padding: 2px 8px;
+    border-radius: var(--radius-xs, 4px);
+    color: var(--channels-default);
+    font-weight: 500;
+}
+
+.dd-pv-tab-on {
+    background: var(--background-mod-normal);
+    color: var(--interactive-text-active, var(--text-strong));
+}
+
+.dd-pv-messages {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 2px;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 14px 4px 0;
+    overflow: hidden;
+}
+
+.dd-pv-message {
+    display: flex;
+    gap: 12px;
+    padding: 6px 12px 6px 14px;
+}
+
+.dd-pv-message-hover {
+    background: var(--background-mod-subtle);
+}
+
+.dd-pv-message-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.dd-pv-author {
     font-weight: 600;
     color: var(--text-strong);
 }
 
-.dd-te-mock-button {
-    padding: 4px 12px;
-    border-radius: 6px;
-    background: var(--control-primary-background-default, var(--brand-500));
-    color: var(--control-primary-text-default, #fff);
-    text-align: center;
+.dd-pv-msg-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
 }
 
-.dd-te-mock-input {
-    margin-top: auto;
-    padding: 8px 10px;
-    border-radius: 8px;
-    background: var(--input-background-default, var(--background-base-lower));
+.dd-pv-time {
+    font-size: 11px;
     color: var(--text-muted);
+}
+
+.dd-pv-tag {
+    padding: 0 4px;
+    border-radius: 3px;
+    background: var(--brand-500);
+    color: var(--control-primary-text-default, #fff);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.dd-pv-text {
+    color: var(--text-default);
+}
+
+.dd-pv-mention {
+    padding: 0 2px;
+    border-radius: 3px;
+    background: var(--mention-background);
+    color: var(--mention-foreground);
+    font-weight: 500;
+}
+
+.dd-pv-link {
+    color: var(--text-link);
+}
+
+.dd-pv-code {
+    align-self: flex-start;
+    padding: 6px 10px;
+    border-radius: var(--radius-xs, 4px);
     border: 1px solid var(--border-subtle);
+    background: var(--background-base-lowest);
+    color: var(--text-default);
+    font-family: var(--font-code);
+    font-size: 12px;
+}
+
+.dd-pv-reactions {
+    display: flex;
+    gap: 4px;
+}
+
+.dd-pv-reaction {
+    padding: 1px 7px;
+    border-radius: var(--radius-sm, 8px);
+    border: 1px solid var(--border-subtle);
+    background: var(--background-mod-subtle);
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.dd-pv-reaction-on {
+    border-color: var(--brand-500);
+    background: color-mix(in srgb, var(--brand-500) 18%, transparent);
+    color: var(--text-strong);
+}
+
+.dd-pv-divider {
+    display: flex;
+    align-items: center;
+    margin: 6px 0 2px 14px;
+    height: 1px;
+    background: var(--status-danger, var(--status-dnd));
+}
+
+.dd-pv-divider span {
+    margin-left: auto;
+    padding: 0 4px;
+    border-radius: 3px;
+    background: var(--status-danger, var(--status-dnd));
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.dd-pv-embed {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    max-width: 340px;
+    padding: 10px 12px;
+    border-radius: var(--radius-xs, 4px);
+    border: 1px solid var(--border-subtle);
+    border-left: 4px solid var(--brand-500);
+    background: var(--background-surface-high);
+}
+
+.dd-pv-button {
+    padding: 5px 14px;
+    border-radius: var(--radius-sm, 8px);
+    background: var(--control-primary-background-default, var(--brand-500));
+    color: var(--control-primary-text-default, #fff);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.dd-pv-button-small {
+    padding: 2px 10px;
+}
+
+.dd-pv-button-secondary {
+    background: var(--background-mod-normal);
+    color: var(--text-default);
+}
+
+.dd-pv-inputbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    margin: 4px 14px 14px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm, 8px);
+    border: 1px solid var(--border-subtle);
+    background: var(--input-background-default, var(--background-base-lower));
+}
+
+.dd-pv-input-plus {
+    display: flex;
+    padding: 3px;
+    border-radius: 50%;
+    background: var(--interactive-text-default, var(--channels-default));
+    color: var(--input-background-default, var(--background-base-lower));
+}
+
+.dd-pv-input-text {
+    flex: 1;
+    color: var(--text-muted);
+}
+
+.dd-pv-scroll {
+    position: absolute;
+    top: 56px;
+    bottom: 70px;
+    right: 3px;
+    width: 8px;
+    border-radius: 4px;
+    background: var(--scrollbar-auto-track, transparent);
+}
+
+.dd-pv-scroll span {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 45%;
+    border-radius: 4px;
+    background: var(--scrollbar-auto-thumb);
+}
+
+/* Members and Active Now */
+.dd-pv-members {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: none;
+    width: 200px;
+    padding: 8px;
+    background: var(--background-base-lower);
+    border-top: 1px solid var(--border-subtle);
+    border-left: 1px solid var(--border-subtle);
+}
+
+.dd-pv-active-now {
+    width: 230px;
+    gap: 10px;
+    padding: 14px;
+    background: var(--chat-background, var(--background-base-low));
+}
+
+.dd-pv-active-title {
+    font-size: 16px;
+}
+
+.dd-pv-member {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 6px;
+    color: var(--channels-default);
+    font-weight: 500;
+}
+
+.dd-pv-friends {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 14px 20px;
+}
+
+.dd-pv-friend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border-top: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm, 8px);
+}
+
+/* Menus and dialogs */
+.dd-pv-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgb(0 0 0 / 0.55);
+}
+
+.dd-pv-menu {
+    position: absolute;
+    top: 60px;
+    left: 230px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 190px;
+    padding: 6px;
+    border-radius: var(--radius-sm, 8px);
+    border: 1px solid var(--border-subtle);
+    background: var(--background-surface-high);
+    box-shadow: 0 8px 16px rgb(0 0 0 / 0.3);
+}
+
+.dd-pv-menu-item {
+    padding: 6px 8px;
+    border-radius: var(--radius-xs, 4px);
+    color: var(--text-default);
+    font-size: 13px;
+}
+
+.dd-pv-menu-item-hover {
+    background: var(--brand-500);
+    color: var(--control-primary-text-default, #fff);
+}
+
+.dd-pv-danger {
+    color: var(--status-danger, var(--status-dnd));
+}
+
+.dd-pv-menu-sep {
+    height: 1px;
+    margin: 4px;
+    background: var(--border-subtle);
+}
+
+.dd-pv-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 380px;
+    margin-left: 220px;
+    padding: 18px;
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid var(--border-subtle);
+    background: var(--modal-background, var(--background-surface-high));
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.4);
+}
+
+.dd-pv-modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-strong);
+}
+
+.dd-pv-label {
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-strong);
+}
+
+.dd-pv-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm, 8px);
+    border: 1px solid var(--border-subtle);
+    background: var(--input-background-default, var(--background-base-lowest));
+    color: var(--text-default);
+}
+
+.dd-pv-modal-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
 }

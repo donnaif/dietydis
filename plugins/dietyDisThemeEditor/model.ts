@@ -300,19 +300,30 @@ export function buildVarDecls(d: ThemeDraft, defaults: Record<string, string>, i
     return lines;
 }
 
+/** The CSS `background` value for the theme's image or gradient ("" when there is none) */
+export function backgroundLayer(d: ThemeDraft) {
+    const bg = d.background;
+    const black = { r: 0, g: 0, b: 0, a: 1 };
+    const size = bg.fit === "repeat" ? "auto" : bg.fit;
+    return bg.type === "image" && bg.image
+        ? `url("${bg.image.replace(/"/g, "%22")}") ${bg.position} / ${size} ${bg.fit === "repeat" ? "repeat" : "no-repeat"}`
+        : bg.type === "gradient"
+            ? `linear-gradient(${Math.round(bg.angle)}deg, ${css(parseHex(bg.from) ?? black)}, ${css(parseHex(bg.to) ?? black)})`
+            : "";
+}
+
+/** The picture on the Home button ("" = Discord's own icon) */
+export function homeImage(d: ThemeDraft) {
+    return d.icons.home === "dietydis" ? dietydisLogo : d.icons.home === "custom" ? d.icons.homeImage : "";
+}
+
 export function buildCss(d: ThemeDraft, defaults: Record<string, string>) {
     let out = "";
     const decls = buildVarDecls(d, defaults);
     if (decls.length) out += `${VAR_SCOPE} {\n${decls.join("\n")}\n}\n`;
 
     const bg = d.background;
-    const black = { r: 0, g: 0, b: 0, a: 1 };
-    const size = bg.fit === "repeat" ? "auto" : bg.fit;
-    const layer = bg.type === "image" && bg.image
-        ? `url("${bg.image.replace(/"/g, "%22")}") ${bg.position} / ${size} ${bg.fit === "repeat" ? "repeat" : "no-repeat"}`
-        : bg.type === "gradient"
-            ? `linear-gradient(${Math.round(bg.angle)}deg, ${css(parseHex(bg.from) ?? black)}, ${css(parseHex(bg.to) ?? black)})`
-            : "";
+    const layer = backgroundLayer(d);
     if (layer || bg.transparentApp) {
         out += `
 /* Background${bg.transparentApp ? " (transparent app)" : ""} */
@@ -352,7 +363,7 @@ const HOME = '[data-list-item-id="guildsnav___home"]';
 function iconsCss(d: ThemeDraft) {
     const ic = d.icons;
     let out = "";
-    const image = ic.home === "dietydis" ? dietydisLogo : ic.home === "custom" ? ic.homeImage : "";
+    const image = homeImage(d);
     if (image) {
         const fit = ic.home === "dietydis" ? "70%" : ic.homeFit === "contain" ? "70%" : "cover";
         out += `

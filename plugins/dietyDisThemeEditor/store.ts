@@ -23,6 +23,19 @@ export const settings = definePluginSettings({
     draft: {
         type: OptionType.CUSTOM,
         default: null as unknown as ThemeDraft | null
+    },
+    // The editor's mini preview: size, kept in view while scrolling, folded away
+    previewSize: {
+        type: OptionType.CUSTOM,
+        default: "large" as "large" | "small"
+    },
+    previewPinned: {
+        type: OptionType.CUSTOM,
+        default: true
+    },
+    previewCollapsed: {
+        type: OptionType.CUSTOM,
+        default: false
     }
 });
 
@@ -211,8 +224,31 @@ export function applyPreview() {
     else document.getElementById(PREVIEW_ID)?.remove();
 
     // The preview card in the editor always shows the draft, preview on or off
-    const decls = buildVarDecls({ ...draft, background: { ...draft.background, type: "none" } }, defaults, false);
-    styleEl(MOCK_ID).textContent = `.dd-te-mock {\n${decls.join("\n")}\n}\n`;
+    const decls = buildVarDecls(draft, defaults, false);
+    styleEl(MOCK_ID).textContent = `.dd-te-mock {\n${decls.join("\n")}\n}\n${FOCUS_CSS}`;
+}
+
+// Hovering a colour row outlines the parts of the preview that use it
+const FOCUS_CSS = COLOR_DEFS.map(c => `.dd-te-mock[data-focus="${c.key}"] [data-k~="${c.key}"]`).join(",\n")
+    + " {\n    outline: 2px solid #f0b232;\n    outline-offset: -2px;\n    animation: dd-te-focus 1.2s ease-in-out infinite;\n}\n";
+
+let focusKey = "";
+const focusListeners = new Set<() => void>();
+
+export function setFocus(key: string) {
+    if (focusKey === key) return;
+    focusKey = key;
+    focusListeners.forEach(f => f());
+}
+
+export function useFocus() {
+    const [, force] = useReducer((x: number) => x + 1, 0);
+    useEffect(() => {
+        const f = () => force();
+        focusListeners.add(f);
+        return () => void focusListeners.delete(f);
+    }, []);
+    return focusKey;
 }
 
 export function removeStyles() {

@@ -4,8 +4,8 @@
  * Safe to run more than once.
  */
 
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from "fs";
-import { join, resolve } from "path";
+import { copyFileSync, existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import { dirname, join, resolve } from "path";
 
 const root = resolve(process.argv[2] ?? ".");
 const icon = process.argv[3];
@@ -72,6 +72,8 @@ const edits = {
         ['message: "Vesktop failed to start"', 'message: "DietyDis failed to start"'],
         ["and restart Vesktop.", "and restart DietyDis."]
     ],
+    // Must equal build.appId, or Windows notifications and taskbar pinning break
+    "src/main/main.ts": [['app.setAppUserModelId("dev.vencord.vesktop")', 'app.setAppUserModelId("com.dietydis.app")']],
     "src/main/tray.ts": [
         ['label: "Reset Vesktop"', 'label: "Reset DietyDis"'],
         ['tray.setToolTip("Vesktop")', 'tray.setToolTip("DietyDis")']
@@ -152,10 +154,49 @@ for (const [file, pairs] of Object.entries(edits)) {
 }
 console.log("[rebrand] strings updated");
 
+// ---- visible "Vesktop" text in the settings UI (src/renderer) ----
+// Renames the word only where it stands alone in text: identifiers (VesktopNative, useVesktopState),
+// URLs (github.com/Vencord/Vesktop), comments, imports, patch owners and logger names stay untouched.
+const VISIBLE_WORD = /(?<![\w/.@-])Vesktop(?![\w/-])/g;
+const SKIP_LINE = /^\s*(\*|\/\/|\/\*|import\b)|addPatch|new Logger/;
+function listSources(dir) {
+    return readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+        e.isDirectory() ? listSources(join(dir, e.name)) : /\.tsx?$/.test(e.name) ? [join(dir, e.name)] : []
+    );
+}
+let renamedLines = 0;
+for (const file of listSources(join(root, "src", "renderer"))) {
+    const lines = readFileSync(file, "utf8").split("\n");
+    let changed = false;
+    const out = lines.map(line => {
+        if (SKIP_LINE.test(line)) return line;
+        const next = line.replace(VISIBLE_WORD, "DietyDis");
+        if (next !== line) {
+            changed = true;
+            renamedLines++;
+        }
+        return next;
+    });
+    if (changed) writeFileSync(file, out.join("\n"));
+}
+console.log(`[rebrand] settings UI: ${renamedLines} lines renamed`);
+
 // ---- icon ----
 if (icon && existsSync(icon)) {
     copyFileSync(icon, join(root, "build", "icon.ico"));
-    console.log("[rebrand] icon copied");
+    // Made by scripts/make-icon.ps1 next to icon.ico; each one is optional
+    const assets = dirname(icon);
+    const extra = {
+        "tray.png": ["static/tray/tray.png", "static/tray.png"],
+        "trayUnread.png": ["static/tray/trayUnread.png"],
+        // The loading screen shows it with <img>, which detects PNG by content despite the .webp name
+        "splash.png": ["static/splash.webp"]
+    };
+    for (const [name, targets] of Object.entries(extra)) {
+        if (!existsSync(join(assets, name))) continue;
+        for (const target of targets) copyFileSync(join(assets, name), join(root, target));
+    }
+    console.log("[rebrand] icon, tray and splash images copied");
 } else {
     console.log("[rebrand] no assets\\icon.ico, keeping the Vesktop icon");
 }

@@ -8,7 +8,6 @@ export const Native = getNative();
 
 import "./styles.css";
 
-import { LogsIcon } from "@components/Icons";
 import { Devs } from "@utils/constants";
 import { EquicordDevs } from "../_shared/devs";
 import { classNameFactory } from "@utils/css";
@@ -17,7 +16,6 @@ import definePlugin from "@utils/types";
 import { findByPropsLazy } from "@webpack";
 import { FluxDispatcher, MessageStore, SelectedChannelStore, UserStore } from "@webpack/common";
 
-import { OpenLogsButton } from "./components/LogsButton";
 import { openLogModal } from "./components/LogsModal";
 import * as idb from "./db";
 import * as LoggedMessageManager from "./LoggedMessageManager";
@@ -256,7 +254,8 @@ export default definePlugin({
     authors: [Devs.Aria, EquicordDevs.keircn],
     description: "Improves MessageLogger with edited message history, ghost ping detection and more",
     tags: ["Chat", "Servers"],
-    dependencies: ["MessageLogger", "HeaderBarAPI"],
+    // DietyDis: no HeaderBarAPI in Vencord; the logs open from the Vencord toolbox instead
+    dependencies: ["MessageLogger"],
 
     patches: [
         {
@@ -317,13 +316,6 @@ export default definePlugin({
         }
     },
 
-    headerBarButton: {
-        icon: LogsIcon,
-        render() {
-            if (!settings.store.ShowLogsButton) return null;
-            return OpenLogsButton();
-        }
-    },
 
     processMessageFetch,
     openLogModal,

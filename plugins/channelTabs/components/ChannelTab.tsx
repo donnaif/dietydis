@@ -7,13 +7,13 @@
 import { Text } from "@components/Text";
 import { ChannelTabsProps, closeTab, ensureUnreadFallbackCountsLoaded, getNotificationDotState, getUnreadFallbackCounts, isTabSelected, moveDraggedTabs, moveToTab, openedTabs, settings, updateUnreadFallbackCounts } from "../util";
 import { ActivityIcon, CircleQuestionIcon, DiscoveryIcon, EnvelopeIcon, FriendsIcon, ICYMIIcon, NitroIcon, QuestIcon, ShopIcon } from "../util/icons";
-import { getActiveAutoCompletes } from "@equicordplugins/questify/utils/completion";
 import { classNameFactory } from "@utils/css";
 import { getGuildAcronym, getIntlMessage } from "@utils/discord";
 import { classes } from "@utils/misc";
 import { Channel, Guild, User } from "@vencord/discord-types";
 import { findComponentByCodeLazy, findCssClassesLazy } from "@webpack";
-import { ActiveJoinedThreadsStore, Avatar, ChannelStore, ContextMenuApi, GuildStore, PresenceStore, ReadStateStore, TypingStore, useDrag, useDrop, useEffect, useRef, UserStore, useState, useStateFromStores } from "@webpack/common";
+import { ActiveJoinedThreadsStore, Avatar, ChannelStore, ContextMenuApi, GuildStore, PresenceStore, ReadStateStore, TypingStore, useEffect, useRef, UserStore, useState, useStateFromStores } from "@webpack/common";
+import { useDrag, useDrop } from "../util/equicordShims";
 import { JSX } from "react";
 
 import { TabContextMenu } from "./ContextMenus";
@@ -464,7 +464,8 @@ export default function ChannelTab(props: ChannelTabsProps & { index: number; })
     }), []);
     drag(drop(ref));
 
-    const hasActiveQuests = getActiveAutoCompletes().length > 0;
+    // DietyDis: quest auto-completion (Equicord Questify) is not shipped, so this marker never shows
+    const hasActiveQuests = false;
     return <div
         className={cl("tab", {
             "tab-compact": compact,

@@ -150,12 +150,6 @@ export const settings = definePluginSettings({
         description: "When enabled, a context menu button will be added to messages to allow you to delete messages without them being logged by other loggers. Might not be safe, use at your own risk."
     },
 
-    ShowLogsButton: {
-        default: true,
-        type: OptionType.BOOLEAN,
-        description: "Toggle to whenever show the toolbox or not",
-        restartNeeded: true,
-    },
 
     ShowWhereMessageIsFrom: {
         default: false,

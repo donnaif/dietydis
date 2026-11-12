@@ -116,7 +116,6 @@ export function LogsModal({ modalProps, initalQuery }: Props) {
                         title: "Clear Logs",
                         body: `Are you sure you want to clear ${messages.length} logs`,
                         confirmText: "Clear",
-                        confirmVariant: "critical-primary",
                         cancelText: "Cancel",
                         onConfirm: async () => {
                             await deleteMessagesBulkIDB(messages.map(e => e.message_id));
@@ -131,7 +130,6 @@ export function LogsModal({ modalProps, initalQuery }: Props) {
                         title: "Clear Logs",
                         body: "Are you sure you want to clear all the logs",
                         confirmText: "Clear",
-                        confirmVariant: "critical-primary",
                         cancelText: "Cancel",
                         onConfirm: async () => {
                             await clearLogs();

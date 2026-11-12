@@ -1,0 +1,13 @@
+{
+    "_comment": "Extra npm packages our plugins need inside Vencord, at the exact versions Equicord uses. Installed by setup-dietydis.ps1.",
+    "dependencies": {
+        "idb": "8.0.3",
+        "native-file-system-adapter": "3.0.1",
+        "@streamparser/json": "0.0.22"
+    },
+    "usedBy": {
+        "idb": "messageLoggerEnhanced (log database in IndexedDB)",
+        "native-file-system-adapter": "messageLoggerEnhanced (export logs to a file)",
+        "@streamparser/json": "messageLoggerEnhanced (import logs from a file)"
+    }
+}

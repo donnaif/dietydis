@@ -10,6 +10,8 @@
 | `setup-dietydis.ps1` | السكربت الفعلي: ينزّل الكود، ينسخ الإضافات، يبني، يغيّر الاسم، يشغّل |
 | `scripts/rebrand.mjs` | يحوّل Vesktop إلى DietyDis (الاسم، المعرّف، ملف التثبيت، النصوص الظاهرة) |
 | `plugins/` | إضافات DietyDis، وهي المصدر الأساسي. تُنسخ إلى `Vencord\src\userplugins\` |
+| `vencord-deps.json` | حزم npm إضافية تحتاجها الإضافات داخل Vencord |
+| `scripts/port-equicord.mjs` | يحوّل استيرادات Equicord عند نقل إضافة منه |
 | `scripts/make-icon.ps1` | يصنع من الشعار كل الأيقونات: `icon.ico` و`tray.png` و`trayUnread.png` و`splash.png` |
 | `assets/` | الشعار الأصلي `logo-original.png` والأيقونات المصنوعة منه |
 
@@ -59,6 +61,37 @@ Vencord يُبنى بـ `--standalone --disable-updater`، فلا يحدّث ن�
 يصنع أيقونة بحواف دائرية بكل الأحجام (16 إلى 256)، مع تكبير بسيط في الأحجام الصغيرة، وصورة `icon-preview.png` للمعاينة. ثم أعد `run-setup.bat -Package`.
 
 ملاحظة: إذا كان DietyDis مثبّتاً من قبل، فقد يبقى الشعار القديم في شريط المهام حتى تثبّت النسخة الجديدة فوقه، لأن Windows يأخذ الأيقونة من اختصار قائمة ابدأ.
+
+## الإضافات
+
+**إضافة DietyDis الخاصة** (مفعّلة تلقائياً): DietyDisArabic، وتفاصيلها في القسم التالي.
+
+**منقولة من Equicord** (تُفعَّل من Settings > Plugins):
+
+| الإضافة | ماذا تفعل |
+|---|---|
+| ChannelTabs | فتح القنوات والمحادثات في تبويبات مثل المتصفح |
+| CommandPalette | قائمة أوامر سريعة من لوحة المفاتيح |
+| MessageLoggerEnhanced | سجل دائم للرسائل المحذوفة والمعدلة مع بحث وتصدير. يُفتح من قائمة Vencord Toolbox |
+| FindReply | الانتقال إلى الردود على رسالة |
+| Quoter | تحويل رسالة إلى صورة اقتباس |
+| CustomSounds | تغيير أصوات الإشعارات |
+| MediaPlaybackSpeed | سرعة تشغيل الصوت والفيديو |
+| StatusPresets | حالات جاهزة للتبديل السريع |
+
+إضافات مساعدة تعمل تلقائياً عند الحاجة: AudioPlayerAPI (لـ CustomSounds) وConcatenatedModules (لأيقونات مجلدات ChannelTabs).
+
+**مدمجة في Vencord أصلاً:** Translate (ترجمة)، MessageLogger (الرسائل المحذوفة)، CallTimer (مؤقت المكالمة)، وغيرها.
+
+### نقل إضافة من Equicord
+
+1. انسخ مجلدها من `Equicord\src\equicordplugins\` إلى `plugins\`.
+2. شغّل `node scripts/port-equicord.mjs` لتحويل الاستيرادات الخاصة بـ Equicord.
+3. ابنِ (`run-setup.bat -NoStart`) وأصلح ما يبقى من أخطاء: ما يوفره Equicord ولا يوفره Vencord يُعرَّف محلياً في الإضافة أو في `plugins\_shared` (المجلدات التي تبدأ بـ `_` لا تُعامل كإضافات).
+4. أي حزمة npm تحتاجها الإضافة تُضاف إلى `vencord-deps.json` بنسخة محددة.
+5. احتفظ بأسماء المؤلفين الأصليين ورخصة GPL.
+
+لا ننقل إضافات تؤتمت أشياء في الحساب أو تتجاوز قيود Discord (مثل QuestCompleter وPlatformSpoofer)، لأنها تعرّض حسابات المستخدمين للحظر. لهذا أُزيل ارتباط ChannelTabs بإضافة Questify.
 
 ## إضافة DietyDisArabic
 

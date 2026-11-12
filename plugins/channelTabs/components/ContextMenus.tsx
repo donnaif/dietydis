@@ -6,7 +6,8 @@
 
 import { Button } from "@components/Button";
 import { Heading } from "@components/Heading";
-import { BookCheckIcon, OpenExternalIcon, PencilIcon, StarFilled, StarOutlined, TrashIcon, UnsendIcon, WindowTopOutlineIcon, XLargeBoldIcon } from "@components/Icons";
+import { OpenExternalIcon, PencilIcon, StarFilled, StarOutlined } from "@components/Icons";
+import { BookCheckIcon, ReadStateUtils, TrashIcon, UnsendIcon, WindowTopOutlineIcon, XLargeBoldIcon } from "../util/equicordShims";
 import { Paragraph } from "@components/Paragraph";
 import { Text } from "@components/Text";
 import { bookmarkFolderColors, bookmarkPlaceholderName, closeOtherTabs, closeTab, closeTabsToTheLeft, closeTabsToTheRight, createTab, getDiscordFolderIcon, getDiscordFolderIconNames, hasClosedTabs, isBookmarkFolder, openedTabs, reopenClosedTab, settings, toggleCompactTab } from "../util";
@@ -14,7 +15,7 @@ import { Bookmark, BookmarkFolder, Bookmarks, ChannelTabsProps, UseBookmarkMetho
 import { getIntlMessage } from "@utils/discord";
 import { Margins } from "@utils/margins";
 import { RenderModalProps } from "@vencord/discord-types";
-import { ChannelStore, closeModal, ColorPicker, FluxDispatcher, Menu, Modal, openModal, ReadStateStore, ReadStateUtils, Select, TextInput, useMemo, useState } from "@webpack/common";
+import { ChannelStore, closeModal, ColorPicker, FluxDispatcher, Menu, Modal, openModal, ReadStateStore, Select, TextInput, useMemo, useState } from "@webpack/common";
 
 const legacyFolderColors: Record<string, string> = {
     "var(--channeltabs-red)": bookmarkFolderColors.Red,

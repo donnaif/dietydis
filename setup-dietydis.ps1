@@ -49,6 +49,16 @@ Step "Building Vencord"
 Push-Location $Vencord
 try {
     Run "pnpm" @("install", "--frozen-lockfile")
+    # Extra packages our plugins need (vencord-deps.json), added only when missing
+    $deps = (Get-Content (Join-Path $Kit "vencord-deps.json") -Raw | ConvertFrom-Json).dependencies
+    $vpkg = Get-Content (Join-Path $Vencord "package.json") -Raw | ConvertFrom-Json
+    $missing = foreach ($d in $deps.PSObject.Properties) {
+        if (-not ($vpkg.dependencies.($d.Name) -or $vpkg.devDependencies.($d.Name))) { "$($d.Name)@$($d.Value)" }
+    }
+    if ($missing) {
+        Write-Host "  adding: $($missing -join ', ')"
+        Run "pnpm" (@("add", "--save-exact") + $missing)
+    }
     # standalone + no updater: Vencord must never replace itself with upstream (it would drop our plugins)
     Run "pnpm" @("build", "--standalone", "--disable-updater")
 } finally { Pop-Location }

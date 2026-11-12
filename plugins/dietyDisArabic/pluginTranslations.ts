@@ -8,6 +8,20 @@
 // untouched (easier to update from Equicord). d = plugin description, o = option descriptions.
 
 export const pluginTranslations: Record<string, { d?: string; o?: Record<string, string>; }> = {
+    DietyDisArabic: {
+        d: "دعم العربية في DietyDis: لغة الواجهة، واتجاه تلقائي للنص، وخطوط عربية مدمجة",
+        o: {
+            uiLanguage: "لغة الواجهة: العربية، أو الإنجليزية الأصلية (أيضاً في الإعدادات > لغة الواجهة)",
+            autoDirection: "اتجاه تلقائي للنص: العربي من اليمين لليسار والإنجليزي من اليسار لليمين",
+            autoDirectionNames: "الاتجاه التلقائي أيضاً في أسماء القنوات والمستخدمين والسيرفرات والحالات والبحث",
+            isolateMentions: "منع تداخل المنشن والروابط والأكواد مع النص العربي حولها",
+            customFont: "استخدام خط خاص للحروف العربية فقط",
+            arabicFont: "الخط العربي (الأربعة الأولى مدمجة في التطبيق وتظهر عند الجميع)",
+            customFontName: "اسم الخط المثبت على جهازك (عند اختيار «خط آخر»)",
+            arabicSize: "حجم الحروف العربية بالنسبة للإنجليزي (%)",
+            missingStrings: "انسخ النصوص الإنجليزية التي ظهرت لك بلا ترجمة، وأرسلها لنضيفها إلى القاموس"
+        }
+    },
     ChannelTabs: {
         d: "اجمع القنوات التي تزورها كثيراً في تبويبات مثل المتصفح",
         o: {

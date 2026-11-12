@@ -5,6 +5,9 @@
  */
 
 import { definePluginSettings } from "@api/Settings";
+import ErrorBoundary from "@components/ErrorBoundary";
+import SettingsPlugin from "@plugins/_core/settings";
+import { removeFromArray } from "@utils/misc";
 import definePlugin, { OptionType, StartAt } from "@utils/types";
 
 // Bundled Arabic fonts (Arabic glyphs only, SIL Open Font License, licenses in ./fonts)
@@ -17,6 +20,7 @@ import naskh700 from "file://./fonts/noto-naskh-arabic-700.woff2?base64";
 import tajawal400 from "file://./fonts/tajawal-400.woff2?base64";
 import tajawal700 from "file://./fonts/tajawal-700.woff2?base64";
 import { missingStrings, setDiscordTranslation, stopDiscordTranslation } from "./discordUi";
+import { LanguageIcon, LanguagePage, type UiLanguage } from "./LanguagePage";
 import { MissingStringsButton } from "./MissingStrings";
 import { pluginTranslations } from "./pluginTranslations";
 
@@ -80,80 +84,108 @@ const ISOLATE_SELECTORS = [
 // adds "take the direction from the first letter". It does not touch layout (that is `direction`).
 const UI_TEXT_SELECTORS = ["div", "h1", "h2", "h3", "h4", "h5", "h6", "label", "button", "p"];
 
+// Descriptions here are English; their Arabic versions are in pluginTranslations.ts and are shown
+// when the interface language is Arabic.
 const settings = definePluginSettings({
+    uiLanguage: {
+        type: OptionType.SELECT,
+        description: "Interface language: Arabic, or Discord's original English (also in Settings > Interface Language)",
+        options: [
+            { label: "العربية", value: "ar", default: true },
+            { label: "English", value: "en" }
+        ],
+        onChange: applyLanguage
+    },
     autoDirection: {
         type: OptionType.BOOLEAN,
-        description: "اتجاه تلقائي للنص: العربي من اليمين لليسار والإنجليزي من اليسار لليمين",
+        description: "Automatic text direction: Arabic right-to-left, English left-to-right",
         default: true,
         onChange: applyStyle
     },
     autoDirectionNames: {
         type: OptionType.BOOLEAN,
-        description: "الاتجاه التلقائي أيضاً في أسماء القنوات والمستخدمين والسيرفرات والحالات والبحث",
+        description: "Automatic direction also in channel, user and server names, statuses and search",
         default: true,
         onChange: applyStyle
     },
     isolateMentions: {
         type: OptionType.BOOLEAN,
-        description: "منع تداخل المنشن والروابط والأكواد مع النص العربي حولها",
+        description: "Keep mentions, links and code from mixing with the Arabic text around them",
         default: true,
         onChange: applyStyle
     },
     customFont: {
         type: OptionType.BOOLEAN,
-        description: "استخدام خط خاص للحروف العربية فقط",
+        description: "Use a separate font for Arabic letters only",
         default: true,
         onChange: applyStyle
     },
     arabicFont: {
         type: OptionType.SELECT,
-        description: "الخط العربي (الأربعة الأولى مدمجة في التطبيق وتظهر عند الجميع)",
+        description: "Arabic font (the first four are built into the app and show for everyone)",
         options: [
-            { label: "IBM Plex Sans Arabic (مدمج)", value: "IBM Plex Sans Arabic", default: true },
-            { label: "Cairo (مدمج)", value: "Cairo" },
-            { label: "Tajawal (مدمج)", value: "Tajawal" },
-            { label: "Noto Naskh Arabic (مدمج، نسخ)", value: "Noto Naskh Arabic" },
-            { label: "Segoe UI (خط Windows)", value: "Segoe UI" },
-            { label: "Tahoma (خط Windows)", value: "Tahoma" },
-            { label: "خط آخر مثبت على جهازك", value: "custom" }
+            { label: "IBM Plex Sans Arabic", value: "IBM Plex Sans Arabic", default: true },
+            { label: "Cairo", value: "Cairo" },
+            { label: "Tajawal", value: "Tajawal" },
+            { label: "Noto Naskh Arabic", value: "Noto Naskh Arabic" },
+            { label: "Segoe UI (Windows)", value: "Segoe UI" },
+            { label: "Tahoma (Windows)", value: "Tahoma" },
+            { label: "Other / خط آخر", value: "custom" }
         ],
         onChange: applyStyle
     },
     customFontName: {
         type: OptionType.STRING,
-        description: "اسم الخط المثبت على جهازك (عند اختيار «خط آخر»)",
+        description: "Name of a font installed on your computer (when \"Other\" is chosen)",
         default: "",
         onChange: applyStyle
     },
     arabicSize: {
         type: OptionType.SLIDER,
-        description: "حجم الحروف العربية بالنسبة للإنجليزي (%)",
+        description: "Size of Arabic letters relative to English (%)",
         markers: [80, 90, 100, 110, 120, 130, 140, 150],
         default: 110,
         stickToMarkers: false,
         onChange: applyStyle
     },
-    translatePlugins: {
-        type: OptionType.BOOLEAN,
-        description: "عرض أوصاف إضافات DietyDis وخياراتها بالعربي",
-        default: true,
-        onChange: applyTranslations
-    },
-    translateDiscord: {
-        type: OptionType.BOOLEAN,
-        description: "تعريب واجهة Discord (تجريبي): النصوص الشائعة بالعربي، والباقي يبقى بالإنجليزي. أعد التحميل (Ctrl+R) ليشمل كل الواجهة",
-        default: true,
-        onChange: (on: boolean) => {
-            setDiscordTranslation(on);
-            applyStyle();
-        }
-    },
     missingStrings: {
         type: OptionType.COMPONENT,
-        description: "انسخ النصوص الإنجليزية التي ظهرت لك بلا ترجمة، وأرسلها لنضيفها إلى القاموس",
+        description: "Copy the English Discord texts you saw without a translation, to add them to the dictionary",
         component: MissingStringsButton
     }
 });
+
+const isArabic = () => settings.store.uiLanguage !== "en";
+
+// Discord UI, plugin descriptions and the RTL text boxes all follow the chosen language
+function applyLanguage() {
+    setDiscordTranslation(isArabic());
+    applyTranslations();
+    applyStyle();
+}
+
+// Earlier versions had two on/off switches instead of the language choice
+function migrateOldSettings() {
+    const store = settings.store as any;
+    if (store.translateDiscord === false) store.uiLanguage = "en";
+    delete store.translateDiscord;
+    delete store.translatePlugins;
+}
+
+function LanguageSettingsPage() {
+    const { uiLanguage } = settings.use(["uiLanguage"]);
+    return <LanguagePage value={uiLanguage === "en" ? "en" : "ar"} onChange={(v: UiLanguage) => { settings.store.uiLanguage = v; applyLanguage(); }} />;
+}
+
+const LANGUAGE_ENTRY_KEY = "dietydis_language";
+const languageEntry = {
+    key: LANGUAGE_ENTRY_KEY,
+    // Read each time Discord builds its settings sidebar
+    get title() { return isArabic() ? "لغة الواجهة" : "Interface Language"; },
+    get panelTitle() { return isArabic() ? "لغة الواجهة" : "Interface Language"; },
+    Component: ErrorBoundary.wrap(LanguageSettingsPage, { noop: true }),
+    Icon: LanguageIcon
+};
 
 function cssString(value: string) {
     return `"${value.replace(/["\\]/g, "")}"`;
@@ -182,10 +214,10 @@ function fontFaces(size: number) {
 }
 
 function buildCss(originalPrimary: string, originalDisplay: string) {
-    const { autoDirection, autoDirectionNames, isolateMentions, customFont, arabicSize, translateDiscord } = settings.store;
+    const { autoDirection, autoDirectionNames, isolateMentions, customFont, arabicSize } = settings.store;
     let css = "";
 
-    if (translateDiscord) {
+    if (isArabic()) {
         css += `${UI_TEXT_SELECTORS.join(",\n")} {\n    unicode-bidi: plaintext;\n}\n`;
     }
 
@@ -238,7 +270,7 @@ function setDescription(target: { description?: string; }, arabic: string | unde
 }
 
 function applyTranslations() {
-    const translate = settings.store.translatePlugins && !!Vencord?.Plugins?.plugins;
+    const translate = isArabic() && !!Vencord?.Plugins?.plugins;
     const plugins = Vencord?.Plugins?.plugins ?? {};
     for (const [name, t] of Object.entries(pluginTranslations)) {
         const plugin = plugins[name] as any;
@@ -256,7 +288,7 @@ function restoreTranslations() {
 
 export default definePlugin({
     name: "DietyDisArabic",
-    description: "دعم العربية في DietyDis: اتجاه تلقائي للنص، وخطوط عربية مدمجة، وتعريب أوصاف الإضافات",
+    description: "Arabic support for DietyDis: interface language, automatic text direction and bundled Arabic fonts",
     authors: [{ name: "DietyDis", id: 0n }],
     // On for new DietyDis users; they can still turn it off in Settings > Plugins
     enabledByDefault: true,
@@ -268,14 +300,15 @@ export default definePlugin({
     getMissingStrings: () => [...missingStrings].sort(),
 
     start() {
-        applyStyle();
-        applyTranslations();
-        setDiscordTranslation(settings.store.translateDiscord);
+        migrateOldSettings();
+        applyLanguage();
+        SettingsPlugin.customEntries.push(languageEntry);
         // Discord's stylesheets may still be loading: re-read its fonts once everything is in
         if (document.readyState !== "complete") window.addEventListener("load", applyStyle, { once: true });
     },
 
     stop() {
+        removeFromArray(SettingsPlugin.customEntries, e => e.key === LANGUAGE_ENTRY_KEY);
         window.removeEventListener("load", applyStyle);
         document.getElementById(STYLE_ID)?.remove();
         restoreTranslations();

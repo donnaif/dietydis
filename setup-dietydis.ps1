@@ -47,7 +47,8 @@ Step "Building Vencord"
 Push-Location $Vencord
 try {
     Run "pnpm" @("install", "--frozen-lockfile")
-    Run "pnpm" @("build")
+    # standalone + no updater: Vencord must never replace itself with upstream (it would drop our plugins)
+    Run "pnpm" @("build", "--standalone", "--disable-updater")
 } finally { Pop-Location }
 
 Step "Rebranding Vesktop to DietyDis"
@@ -60,7 +61,7 @@ try {
         Push-Location (Join-Path $Vesktop "node_modules\electron")
         try { Run "node" @("install.js") } finally { Pop-Location }
     }
-    Run "node" @((Join-Path $Kit "scripts\rebrand.mjs"), $Vesktop, (Join-Path $Kit "assets\icon.ico"))
+    Run "node" @((Join-Path $Kit "scripts\rebrand.mjs"), $Vesktop, (Join-Path $Kit "assets\icon.ico"), (Join-Path $Vencord "dist"))
 } finally { Pop-Location }
 
 Step "Pointing DietyDis at our Vencord build"

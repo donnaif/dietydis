@@ -5,7 +5,7 @@
  */
 
 import { definePluginSettings } from "@api/Settings";
-import definePlugin, { OptionType } from "@utils/types";
+import definePlugin, { OptionType, StartAt } from "@utils/types";
 
 const STYLE_ID = "dietydis-arabic-style";
 const FONT_ALIAS = "DietyDis Arabic";
@@ -53,14 +53,11 @@ const settings = definePluginSettings({
     }
 });
 
-let originalPrimary = "";
-let originalDisplay = "";
-
 function cssString(value: string) {
     return `"${value.replace(/["\\]/g, "")}"`;
 }
 
-function buildCss() {
+function buildCss(originalPrimary: string, originalDisplay: string) {
     const { autoDirection, customFont, arabicFont, arabicSize } = settings.store;
     let css = "";
 
@@ -94,24 +91,32 @@ function applyStyle() {
         style.id = STYLE_ID;
         document.head.appendChild(style);
     }
-    style.textContent = buildCss();
+    // Read Discord's own font stacks with our override switched off: they may load after we start
+    style.textContent = "";
+    const root = getComputedStyle(document.documentElement);
+    const primary = root.getPropertyValue("--font-primary").trim();
+    const display = root.getPropertyValue("--font-display").trim();
+    style.textContent = buildCss(primary, display);
 }
 
 export default definePlugin({
     name: "DietyDisArabic",
     description: "دعم العربية في DietyDis: اتجاه تلقائي للنص، وخط وحجم خاص للحروف العربية",
     authors: [{ name: "DietyDis", id: 0n }],
+    // On for new DietyDis users; they can still turn it off in Settings > Plugins
+    enabledByDefault: true,
     settings,
+    // Only CSS is needed, so start as soon as the page exists (also on the login screen)
+    startAt: StartAt.DOMContentLoaded,
 
     start() {
-        // Read Discord's own font stacks before we override them
-        const root = getComputedStyle(document.documentElement);
-        originalPrimary = root.getPropertyValue("--font-primary").trim();
-        originalDisplay = root.getPropertyValue("--font-display").trim();
         applyStyle();
+        // Discord's stylesheets may still be loading: re-read its fonts once everything is in
+        if (document.readyState !== "complete") window.addEventListener("load", applyStyle, { once: true });
     },
 
     stop() {
+        window.removeEventListener("load", applyStyle);
         document.getElementById(STYLE_ID)?.remove();
     }
 });

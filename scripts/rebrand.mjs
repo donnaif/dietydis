@@ -1,6 +1,6 @@
 /*
  * DietyDis rebrand script: turns a Vesktop checkout into DietyDis.
- * Usage: node rebrand.mjs <path-to-Vesktop> [path-to-icon.ico]
+ * Usage: node rebrand.mjs <path-to-Vesktop> [path-to-icon.ico] [path-to-Vencord-dist]
  * Safe to run more than once.
  */
 
@@ -9,6 +9,7 @@ import { join, resolve } from "path";
 
 const root = resolve(process.argv[2] ?? ".");
 const icon = process.argv[3];
+const vencordDist = process.argv[4] ? resolve(process.argv[4]) : null;
 
 if (!existsSync(join(root, "package.json"))) {
     console.error(`[rebrand] package.json not found in ${root}`);
@@ -37,6 +38,20 @@ pkg.build.nsis = {
 };
 // No auto-update from Vesktop's GitHub releases (DietyDis gets its own updater later)
 pkg.build.publish = null;
+// Ship our Vencord build (with DietyDis plugins) inside the app: resources\vencord
+if (vencordDist) {
+    if (!existsSync(join(vencordDist, "vencordDesktopMain.js"))) {
+        console.error(`[rebrand] Vencord build not found in ${vencordDist} (run pnpm build in Vencord first)`);
+        process.exit(1);
+    }
+    pkg.build.extraResources = [
+        {
+            from: vencordDist,
+            to: "vencord",
+            filter: ["vencordDesktop*.js", "vencordDesktop*.css", "*.LEGAL.txt"]
+        }
+    ];
+}
 writeFileSync(pkgPath, JSON.stringify(pkg, null, 4) + "\n");
 console.log("[rebrand] package.json updated");
 
@@ -84,7 +99,35 @@ const edits = {
             "<p>DietyDis is a custom Discord desktop app for Windows, based on Vesktop and Vencord</p>"
         ]
     ],
-    "static/views/updater/index.html": [["<title>Vesktop Updater</title>", "<title>DietyDis Updater</title>"]]
+    "static/views/updater/index.html": [["<title>Vesktop Updater</title>", "<title>DietyDis Updater</title>"]],
+    // Phase 2: the installed app loads the Vencord build shipped in resources\vencord
+    "src/main/vencordFilesDir.ts": [
+        ['import { join } from "path";', 'import { join } from "path";\n\nimport { app } from "electron";'],
+        [
+            'export const VENCORD_FILES_DIR = State.store.vencordDir || join(SESSION_DATA_DIR, "vencordFiles");',
+            "// DietyDis: packaged builds use the Vencord build bundled in resources\\vencord\n" +
+                "export const USING_BUNDLED_VENCORD = !State.store.vencordDir && app.isPackaged;\n" +
+                "export const VENCORD_FILES_DIR =\n" +
+                "    State.store.vencordDir ||\n" +
+                '    (USING_BUNDLED_VENCORD ? join(process.resourcesPath, "vencord") : join(SESSION_DATA_DIR, "vencordFiles"));'
+        ]
+    ],
+    "src/main/utils/vencordLoader.ts": [
+        [
+            'import { VENCORD_FILES_DIR } from "main/vencordFilesDir";',
+            'import { USING_BUNDLED_VENCORD, VENCORD_FILES_DIR } from "main/vencordFilesDir";'
+        ],
+        [
+            // no trailing newline in the search text: checkouts on Windows may use CRLF
+            "export async function downloadVencordFiles() {",
+            "export async function downloadVencordFiles() {\n" +
+                "    // DietyDis: never replace the bundled Vencord (with our plugins) by upstream files\n" +
+                "    if (USING_BUNDLED_VENCORD) {\n" +
+                '        console.warn("DietyDis ships its own Vencord build; skipping download. Reinstall DietyDis to repair it.");\n' +
+                "        return;\n" +
+                "    }\n"
+        ]
+    ]
 };
 
 for (const [file, pairs] of Object.entries(edits)) {
@@ -96,9 +139,11 @@ for (const [file, pairs] of Object.entries(edits)) {
     }
     let text = readFileSync(path, "utf8");
     for (const [from, to, all] of pairs) {
+        // Already applied? (checked first: some replacements contain their own search text)
+        if (text.includes(to) && !(all && text.includes(from) && !to.includes(from))) continue;
         if (text.includes(from)) {
             text = all ? text.split(from).join(to) : text.replace(from, to);
-        } else if (!text.includes(to)) {
+        } else {
             console.error(`[rebrand] not found in ${file}: ${from}`);
             failed = true;
         }

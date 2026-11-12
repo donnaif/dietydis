@@ -24,11 +24,14 @@ run-setup.bat -Package     :: بناء ملف التثبيت DietyDis-Setup-<ver
 
 المتطلبات: Node.js 22 أو أحدث، وGit. أما pnpm فيفعّله السكربت تلقائياً إن لم يكن موجوداً.
 
-السكربت يضبط تلقائياً **Vencord Location** على نسختنا (`Vencord\dist`) في `%APPDATA%\DietyDis\state.json`، فلا حاجة لضبطها يدوياً.
+### كيف يجد التطبيق Vencord
 
-بعد أول تشغيل:
-1. فعّل إضافة **DietyDisArabic** من Settings > Plugins إن لم تكن مفعّلة.
-2. أوقف التحديث التلقائي لـ Vencord من Settings > Updater، حتى لا تُستبدل نسختنا بالنسخة الأصلية.
+- **التطبيق المثبّت (من ملف التثبيت):** Vencord مع إضافات DietyDis مدمج داخل التطبيق في `resources\vencord`. لا يُنزَّل شيء من الإنترنت، ويعمل على أي جهاز.
+- **أثناء التطوير على جهازك:** السكربت يضبط **Vencord Location** على `Vencord\dist` في `%APPDATA%\DietyDis\state.json`، فترى تعديلاتك فوراً بعد البناء.
+
+Vencord يُبنى بـ `--standalone --disable-updater`، فلا يحدّث نفسه إلى النسخة الأصلية ولا تضيع إضافاتنا. وزر "Repair Vencord" لا ينزّل النسخة الأصلية فوق نسختنا المدمجة.
+
+إضافة **DietyDisArabic** مفعّلة تلقائياً للمستخدمين الجدد.
 
 ## إضافة DietyDisArabic
 
@@ -51,13 +54,17 @@ pnpm watch      :: ثم Ctrl+R داخل التطبيق لإعادة التحمي
 - ملف التثبيت: NSIS لـ x64 فقط، مع اختيار مجلد التثبيت.
 - النصوص الظاهرة: عنوان النافذة، أيقونة الشريط، القوائم، رسائل الأخطاء.
 - **تحديثات Vesktop التلقائية معطّلة**، حتى لا يُستبدل DietyDis بـ Vesktop.
+- التطبيق المثبّت يحمّل Vencord من `resources\vencord` (`src/main/vencordFilesDir.ts`)، ولا ينزّل Vencord الأصلي (`src/main/utils/vencordLoader.ts`).
 
-## المرحلة الثانية (لم تبدأ بعد)
+## المراحل
 
-- دمج Vencord داخل ملف التثبيت نفسه (`extraResources`) بدل الاعتماد على مسار `DietyDis-src`.
-- نظام تحديث خاص بـ DietyDis.
+**المرحلة الثانية (تمت):** دمج Vencord وإضافاتنا داخل ملف التثبيت (`extraResources`)، وتعطيل كل التحديثات التي تستبدلها بالنسخ الأصلية.
+
+**التالي:**
+- نظام تحديث خاص بـ DietyDis (حالياً لا يتحدث التطبيق تلقائياً: تحديثه = تثبيت نسخة جديدة).
 - تغيير بقية نصوص "Vesktop" في صفحة الإعدادات وUser Agent.
-- شعار DietyDis.
+- شعار DietyDis (`assets/icon.ico`).
+- توقيع ملف التثبيت حتى لا يظهر تحذير SmartScreen.
 
 ## تنبيهات
 

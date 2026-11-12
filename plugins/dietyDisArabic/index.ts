@@ -16,6 +16,8 @@ import naskh400 from "file://./fonts/noto-naskh-arabic-400.woff2?base64";
 import naskh700 from "file://./fonts/noto-naskh-arabic-700.woff2?base64";
 import tajawal400 from "file://./fonts/tajawal-400.woff2?base64";
 import tajawal700 from "file://./fonts/tajawal-700.woff2?base64";
+import { missingStrings, setDiscordTranslation, stopDiscordTranslation } from "./discordUi";
+import { MissingStringsButton } from "./MissingStrings";
 import { pluginTranslations } from "./pluginTranslations";
 
 const STYLE_ID = "dietydis-arabic-style";
@@ -70,6 +72,13 @@ const ISOLATE_SELECTORS = [
     "code.inline",
     "time"
 ].map(s => `[class*="messageContent"] ${s}`);
+
+// With the Discord UI translated: let interface text boxes take their direction from their first
+// letter. Translated texts start with a right-to-left mark, so they lay out right-to-left (word order
+// and punctuation), while text still in English starts with a Latin letter and stays as it was.
+// Discord already gives most divs `unicode-bidi: isolate`; plaintext keeps that isolation and only
+// adds "take the direction from the first letter". It does not touch layout (that is `direction`).
+const UI_TEXT_SELECTORS = ["div", "h1", "h2", "h3", "h4", "h5", "h6", "label", "button", "p"];
 
 const settings = definePluginSettings({
     autoDirection: {
@@ -129,6 +138,20 @@ const settings = definePluginSettings({
         description: "عرض أوصاف إضافات DietyDis وخياراتها بالعربي",
         default: true,
         onChange: applyTranslations
+    },
+    translateDiscord: {
+        type: OptionType.BOOLEAN,
+        description: "تعريب واجهة Discord (تجريبي): النصوص الشائعة بالعربي، والباقي يبقى بالإنجليزي. أعد التحميل (Ctrl+R) ليشمل كل الواجهة",
+        default: true,
+        onChange: (on: boolean) => {
+            setDiscordTranslation(on);
+            applyStyle();
+        }
+    },
+    missingStrings: {
+        type: OptionType.COMPONENT,
+        description: "انسخ النصوص الإنجليزية التي ظهرت لك بلا ترجمة، وأرسلها لنضيفها إلى القاموس",
+        component: MissingStringsButton
     }
 });
 
@@ -159,8 +182,12 @@ function fontFaces(size: number) {
 }
 
 function buildCss(originalPrimary: string, originalDisplay: string) {
-    const { autoDirection, autoDirectionNames, isolateMentions, customFont, arabicSize } = settings.store;
+    const { autoDirection, autoDirectionNames, isolateMentions, customFont, arabicSize, translateDiscord } = settings.store;
     let css = "";
+
+    if (translateDiscord) {
+        css += `${UI_TEXT_SELECTORS.join(",\n")} {\n    unicode-bidi: plaintext;\n}\n`;
+    }
 
     if (autoDirection) {
         css += `${TEXT_SELECTORS.join(",\n")} {\n    unicode-bidi: plaintext;\n    text-align: start;\n}\n`;
@@ -237,9 +264,13 @@ export default definePlugin({
     // Only CSS is needed, so start as soon as the page exists (also on the login screen)
     startAt: StartAt.DOMContentLoaded,
 
+    // Untranslated Discord texts seen so far (for the dictionary; also in the settings button)
+    getMissingStrings: () => [...missingStrings].sort(),
+
     start() {
         applyStyle();
         applyTranslations();
+        setDiscordTranslation(settings.store.translateDiscord);
         // Discord's stylesheets may still be loading: re-read its fonts once everything is in
         if (document.readyState !== "complete") window.addEventListener("load", applyStyle, { once: true });
     },
@@ -248,5 +279,6 @@ export default definePlugin({
         window.removeEventListener("load", applyStyle);
         document.getElementById(STYLE_ID)?.remove();
         restoreTranslations();
+        stopDiscordTranslation();
     }
 });

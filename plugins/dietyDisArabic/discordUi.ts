@@ -15,7 +15,7 @@
 
 import { i18n } from "@webpack/common";
 
-import { discordStrings } from "./discordStrings";
+import { discordStrings, keepEnglish } from "./discordStrings";
 
 type AstNode = string | [1, string] | [8, string, AstNode[]] | unknown[];
 type Message = { locale: string; ast: AstNode[]; reserialize(): string; };
@@ -31,31 +31,35 @@ let installed = false;
 let enabled = false;
 let retryTimer: ReturnType<typeof setInterval> | undefined;
 
-// "{arg}"  "$[children](hook)"  "**bold**"  -> AST
-function parse(text: string): AstNode[] | null {
+// "{arg}"  "$[children](hook)"  "**bold**"  -> AST (children are parsed too, so "**{game}**" works)
+function parse(text: string): AstNode[] {
     const out: AstNode[] = [];
     const re = /\{(\w+)\}|\$\[([^\]]*)\]\(([^)]+)\)|\*\*([^*]+)\*\*/g;
     let last = 0;
     for (let m: RegExpExecArray | null; (m = re.exec(text));) {
         if (m.index > last) out.push(text.slice(last, m.index));
         if (m[1]) out.push([1, m[1]]);
-        else if (m[3]) out.push([8, m[3], m[2] ? [m[2]] : []]);
-        else if (m[4]) out.push([8, "$b", [m[4]]]);
+        else if (m[3]) out.push([8, m[3], m[2] ? parse(m[2]) : []]);
+        else if (m[4]) out.push([8, "$b", parse(m[4])]);
         last = re.lastIndex;
     }
     if (last < text.length) out.push(text.slice(last));
     return out;
 }
 
-// The variables and hooks a message uses; anything we can't read makes the message "unsupported"
+// The variables and hooks a message uses (including inside hooks); anything we can't read
+// makes the message "unsupported"
 function signature(ast: AstNode[]): string | null {
     const parts: string[] = [];
     for (const node of ast) {
         if (typeof node === "string") continue;
         if (!Array.isArray(node)) return null;
         if (node[0] === 1 && typeof node[1] === "string") parts.push("{" + node[1] + "}");
-        else if (node[0] === 8 && typeof node[1] === "string") parts.push("$" + node[1]);
-        else return null; // plural/select and other ICU forms: leave in English
+        else if (node[0] === 8 && typeof node[1] === "string") {
+            const inner = Array.isArray(node[2]) ? signature(node[2] as AstNode[]) : "";
+            if (inner == null) return null;
+            parts.push("$" + node[1] + "(" + inner + ")");
+        } else return null; // plural/select and other ICU forms: leave in English
     }
     return parts.sort().join(",");
 }
@@ -83,7 +87,7 @@ function replacementFor(fn: MessageFn): MessageFn | null {
                 copy.ast = ast;
                 result = () => copy;
             }
-        } else if (english && signature(message.ast) != null && /[A-Za-z]/.test(english)) {
+        } else if (english && !keepEnglish.has(english) && signature(message.ast) != null && /[A-Za-z]/.test(english)) {
             missingStrings.add(english);
         }
     } catch { /* not a message we understand: leave it alone */ }

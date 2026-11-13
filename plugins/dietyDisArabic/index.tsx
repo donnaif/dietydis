@@ -22,7 +22,9 @@ import tajawal700 from "file://./fonts/tajawal-700.woff2?base64";
 import { missingStrings, setDiscordTranslation, stopDiscordTranslation } from "./discordUi";
 import { LanguageIcon, LanguagePage, type UiLanguage } from "./LanguagePage";
 import { MissingStringsButton } from "./MissingStrings";
-import { pluginTranslations } from "./pluginTranslations";
+import { type PluginTexts, pluginTranslations } from "./pluginTranslations";
+import { startVencordUiTranslation, stopVencordUiTranslation } from "./vencordUi";
+import { vencordPluginTranslations } from "./vencordPluginTranslations";
 
 const STYLE_ID = "dietydis-arabic-style";
 const FONT_ALIAS = "DietyDis Arabic";
@@ -273,30 +275,63 @@ function applyStyle() {
     style.textContent = buildCss(primary, display);
 }
 
-// ---- Arabic plugin descriptions (originals kept so they come back when turned off) ----
-const originals = new Map<object, string>();
+// ---- Arabic plugin texts (originals kept so they come back when turned off) ----
+// Field values before translation, per object; `undefined` means the field didn't exist
+const originals = new Map<object, Map<string, string | undefined>>();
 
-function setDescription(target: { description?: string; }, arabic: string | undefined, translate: boolean) {
-    if (!target || !arabic) return;
-    if (!originals.has(target)) originals.set(target, target.description ?? "");
-    target.description = translate ? arabic : originals.get(target)!;
+function setField(target: any, field: string, arabic: string | undefined, translate: boolean) {
+    if (!target || typeof target !== "object" || !arabic) return;
+    let saved = originals.get(target);
+    if (!saved) originals.set(target, saved = new Map());
+    if (!saved.has(field)) saved.set(field, target[field]);
+    if (translate) target[field] = arabic;
+    else if (saved.get(field) === undefined) delete target[field];
+    else target[field] = saved.get(field);
+}
+
+function applyPluginTexts(plugins: Record<string, any>, all: Record<string, PluginTexts>, translate: boolean) {
+    for (const [name, t] of Object.entries(all)) {
+        const plugin = plugins[name];
+        if (!plugin) continue;
+        setField(plugin, "description", t.d, translate);
+        // Some plugins build `options` in a getter that throws this early: skip their settings
+        let def: Record<string, any>;
+        try { def = plugin.settings?.def ?? plugin.options ?? {}; } catch { continue; }
+        for (const [key, value] of Object.entries(t.o ?? {})) {
+            const setting = def[key];
+            if (!setting) continue;
+            const o = typeof value === "string" ? { d: value } : value;
+            setField(setting, "description", o.d, translate);
+            // A setting's title is its key in words ("saveMessages" → "Save Messages") unless displayName is set
+            setField(setting, "displayName", o.n, translate);
+            // Select options may come from a getter that throws before the plugin's data is ready
+            let options: unknown;
+            try { options = setting.options; } catch { continue; }
+            if (Array.isArray(options) && o.s?.length === options.length)
+                options.forEach((opt: any, i: number) => setField(opt, "label", o.s![i], translate));
+        }
+    }
 }
 
 function applyTranslations() {
     const translate = isArabic() && !!Vencord?.Plugins?.plugins;
     const plugins = Vencord?.Plugins?.plugins ?? {};
-    for (const [name, t] of Object.entries(pluginTranslations)) {
-        const plugin = plugins[name] as any;
-        if (!plugin) continue;
-        setDescription(plugin, t.d, translate);
-        const def = plugin.settings?.def ?? plugin.options ?? {};
-        for (const [key, arabic] of Object.entries(t.o ?? {})) setDescription(def[key], arabic, translate);
-    }
+    // Hand-written DietyDis texts last, so they win over the bulk Vencord translations
+    applyPluginTexts(plugins, vencordPluginTranslations, translate);
+    applyPluginTexts(plugins, pluginTranslations, translate);
+    if (translate) startVencordUiTranslation();
+    else stopVencordUiTranslation();
 }
 
 function restoreTranslations() {
-    for (const [target, original] of originals) (target as any).description = original;
+    for (const [target, saved] of originals) {
+        for (const [field, value] of saved) {
+            if (value === undefined) delete (target as any)[field];
+            else (target as any)[field] = value;
+        }
+    }
     originals.clear();
+    stopVencordUiTranslation();
 }
 
 export default definePlugin({

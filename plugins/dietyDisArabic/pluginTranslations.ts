@@ -7,7 +7,11 @@
 // Arabic descriptions for DietyDis plugins, applied at runtime so the ported plugin sources stay
 // untouched (easier to update from Equicord). d = plugin description, o = option descriptions.
 
-export const pluginTranslations: Record<string, { d?: string; o?: Record<string, string>; }> = {
+// A setting is either its description, or { n: title, d: description, s: select option labels in order }
+export type SettingTexts = string | { n?: string; d?: string; s?: string[]; };
+export type PluginTexts = { d?: string; o?: Record<string, SettingTexts>; };
+
+export const pluginTranslations: Record<string, PluginTexts> = {
     DietyDisArabic: {
         d: "دعم العربية في DietyDis: لغة الواجهة، واتجاه تلقائي للنص، وخطوط عربية مدمجة",
         o: {

@@ -187,6 +187,30 @@ for (const [file, pairs] of Object.entries(edits)) {
 }
 console.log("[rebrand] strings updated");
 
+// ---- screen share picker: grouped source cards and a cleaner look (kit's vesktop/ folder) ----
+{
+    const kitVesktop = fileURLToPath(new URL("../vesktop/", import.meta.url));
+    const compDir = join(root, "src", "renderer", "components");
+    const pickerPath = join(compDir, "ScreenSharePicker.tsx");
+    copyFileSync(join(kitVesktop, "screenSharePicker.dietydis.css"), join(compDir, "screenSharePicker.dietydis.css"));
+    let picker = readFileSync(pickerPath, "utf8");
+    if (!picker.includes('import "./screenSharePicker.dietydis.css";')) {
+        picker = picker.replace('import "./screenSharePicker.css";', 'import "./screenSharePicker.css";\nimport "./screenSharePicker.dietydis.css";');
+    }
+    // Swap the whole ScreenPicker function (every run, so kit changes always land)
+    const start = picker.search(/(\/\/ DietyDis: screens and windows[^\n]*\n)?function ScreenPicker\(/);
+    const end = picker.indexOf("function AudioSettingsModal(");
+    if (start < 0 || end < 0 || !picker.includes("screenSharePicker.dietydis.css")) {
+        console.error("[rebrand] ScreenSharePicker.tsx layout changed: picker redesign not applied");
+        failed = true;
+    } else {
+        const part = readFileSync(join(kitVesktop, "ScreenPicker.part.tsx"), "utf8").replace(/\r\n/g, "\n");
+        picker = picker.slice(0, start) + part + picker.slice(end);
+        writeFileSync(pickerPath, picker);
+        console.log("[rebrand] screen share picker redesigned");
+    }
+}
+
 // ---- visible "Vesktop" text in the settings UI (src/renderer) ----
 // Renames the word only where it stands alone in text: identifiers (VesktopNative, useVesktopState),
 // URLs (github.com/Vencord/Vesktop), comments, imports, patch owners and logger names stay untouched.

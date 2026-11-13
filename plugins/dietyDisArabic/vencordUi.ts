@@ -54,8 +54,39 @@ const vencordStrings: Record<string, string> = {
     "Restart Required": "إعادة التشغيل مطلوبة",
     "A restart is required to apply this change": "يلزم إعادة التشغيل لتطبيق هذا التغيير",
     "Restart now": "أعد التشغيل الآن",
-    "Later!": "لاحقاً"
+    "Later!": "لاحقاً",
+    // Screen share picker (DietyDis app window)
+    "Screen Share Picker": "مشاركة الشاشة",
+    "Screens": "الشاشات",
+    "Windows": "النوافذ",
+    "Entire Screen": "الشاشة بالكامل",
+    "Entire screen": "الشاشة بالكامل",
+    "What you're streaming": "ما تبثّه الآن",
+    "Stream Settings": "إعدادات البث",
+    "Resolution": "الدقة",
+    "Frame Rate": "معدل الإطارات",
+    "Source": "الأصلية",
+    "Content Type": "نوع المحتوى",
+    "Prefer Smoothness": "الأولوية للسلاسة",
+    "Prefer Clarity": "الأولوية للوضوح",
+    "Choosing \"Prefer Clarity\" will result in a significantly lower framerate in exchange for a much sharper and clearer image.":
+        "اختيار «الأولوية للوضوح» يخفض عدد الإطارات كثيراً مقابل صورة أوضح وأدق بكثير.",
+    "Stream With Audio": "البث مع الصوت",
+    "Back": "رجوع",
+    "Go Live": "بدء البث"
 };
+
+// Texts with a number in them
+const vencordPatterns: [RegExp, string][] = [
+    [/^Screen (\d+)$/, "الشاشة $1"]
+];
+
+function lookup(text: string) {
+    const exact = vencordStrings[text];
+    if (exact) return exact;
+    for (const [re, to] of vencordPatterns) if (re.test(text)) return text.replace(re, to);
+    return undefined;
+}
 
 // Where Vencord's plugin UI lives: its own vc-* elements, plus Discord popouts it opens
 // (filter dropdowns, tooltips, the restart dialog)
@@ -71,7 +102,7 @@ function inScope(el: Element | null) {
 function translateText(node: Text) {
     const raw = node.nodeValue;
     if (!raw) return;
-    const arabic = vencordStrings[raw.trim()];
+    const arabic = lookup(raw.trim());
     if (arabic && inScope(node.parentElement)) node.nodeValue = raw.replace(raw.trim(), arabic);
 }
 

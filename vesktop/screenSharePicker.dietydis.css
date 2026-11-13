@@ -1,0 +1,181 @@
+/* DietyDis: cleaner screen share picker (loaded after Vesktop's screenSharePicker.css) */
+
+.vcd-screen-picker-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-block: 4px 8px;
+}
+
+.vcd-screen-picker-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.vcd-screen-picker-group-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--header-secondary, var(--text-muted));
+}
+
+.vcd-screen-picker-group-count {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+    min-width: 18px;
+    padding-inline: 6px;
+    box-sizing: border-box;
+    text-align: center;
+    border-radius: 9px;
+    color: var(--text-normal);
+    background: var(--background-modifier-accent, rgba(255, 255, 255, 0.08));
+}
+
+/* Source cards */
+.vcd-screen-picker-screen-grid {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+}
+
+.vcd-screen-picker-screen-radio {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.vcd-screen-picker-screen-label {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 10px;
+    background: var(--background-secondary);
+    border: 2px solid transparent;
+    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+
+.vcd-screen-picker-screen-label:hover {
+    outline: none;
+    border-color: var(--brand-500);
+    background: var(--background-modifier-hover, var(--background-secondary-alt));
+    transform: translateY(-2px);
+}
+
+.vcd-screen-picker-screen-label:focus-within {
+    border-color: var(--brand-500);
+}
+
+.vcd-screen-picker-screen-thumb {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vcd-screen-picker-screen-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.vcd-screen-picker-screen-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-normal);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+    padding-inline: 4px;
+}
+
+/* Settings step */
+.vcd-screen-picker-card {
+    padding: 14px;
+    border-radius: 10px;
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-accent, rgba(255, 255, 255, 0.06));
+}
+
+.vcd-screen-picker-preview {
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.vcd-screen-picker-preview-img {
+    width: 100%;
+    max-height: 280px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.35);
+    margin-bottom: 0;
+}
+
+.vcd-screen-picker-preview > div,
+.vcd-screen-picker-preview > p {
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+/* One option row per line, so the six resolutions never squeeze */
+.vcd-screen-picker-quality {
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.vcd-screen-picker-quality:last-of-type {
+    margin-bottom: 0;
+}
+
+/* Segmented buttons */
+.vcd-screen-picker-option-radios {
+    gap: 4px;
+    padding: 4px;
+    border-radius: 8px;
+    background: var(--background-tertiary, rgba(0, 0, 0, 0.25));
+    box-sizing: border-box;
+}
+
+.vcd-screen-picker-option-radio,
+.vcd-screen-picker-option-radio:first-child,
+.vcd-screen-picker-option-radio:last-child {
+    border: none;
+    border-radius: 6px;
+    padding: 7px 10px;
+    background: transparent;
+    color: var(--interactive-normal, var(--text-normal));
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.vcd-screen-picker-option-radio:hover {
+    background: var(--background-modifier-hover, rgba(255, 255, 255, 0.06));
+    color: var(--interactive-hover, var(--text-normal));
+}
+
+.vcd-screen-picker-option-radio[data-checked="true"] {
+    background: var(--brand-500);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.vcd-screen-picker-quality-section p {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.vcd-screen-picker-audio {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--background-modifier-accent, rgba(255, 255, 255, 0.06));
+}

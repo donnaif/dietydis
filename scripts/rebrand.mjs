@@ -78,7 +78,27 @@ const edits = {
         ["and restart Vesktop.", "and restart DietyDis."]
     ],
     // Must equal build.appId, or Windows notifications and taskbar pinning break
-    "src/main/main.ts": [['app.setAppUserModelId("dev.vencord.vesktop")', 'app.setAppUserModelId("com.dietydis.app")']],
+    "src/main/main.ts": [
+        ['app.setAppUserModelId("dev.vencord.vesktop")', 'app.setAppUserModelId("com.dietydis.app")'],
+        // Screen share: encode with the GPU, or 1440p/60fps streams drop to a few fps on the CPU encoder.
+        // Turned on once for existing installs too; the user can still switch it off in settings.
+        [
+            "    const { disableSmoothScroll, hardwareAcceleration, hardwareVideoAcceleration, hardwareVideoEncoding } =",
+            "    // DietyDis: GPU screen-share encoding on by default (set once, so turning it off later sticks)\n" +
+                "    if (!(State.store as any).dietydisHwEncoding) {\n" +
+                "        (State.store as any).dietydisHwEncoding = true;\n" +
+                "        Settings.store.hardwareVideoEncoding = true;\n" +
+                "        Settings.store.hardwareVideoAcceleration = true;\n" +
+                "    }\n\n" +
+                "    const { disableSmoothScroll, hardwareAcceleration, hardwareVideoAcceleration, hardwareVideoEncoding } ="
+        ]
+    ],
+    // New installs: GPU encoding and decoding for streams on by default (DietyDis is Windows-only;
+    // the Mesa caveat in the setting's description is about AMD drivers on Linux)
+    "src/shared/defaultSettings.ts": [
+        ["    hardwareVideoAcceleration: false,", "    hardwareVideoAcceleration: true,"],
+        ["    hardwareVideoEncoding: false,", "    hardwareVideoEncoding: true,"]
+    ],
     "src/main/tray.ts": [
         ['label: "Reset Vesktop"', 'label: "Reset DietyDis"'],
         ['tray.setToolTip("Vesktop")', 'tray.setToolTip("DietyDis")']
